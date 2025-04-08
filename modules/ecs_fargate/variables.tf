@@ -26,6 +26,36 @@ variable "dd_image_version" {
   default     = "latest"
 }
 
+variable "dd_essential" {
+  description = "Whether the Datadog Agent container is essential"
+  type        = bool
+  default     = false
+}
+
+variable "dd_is_datadog_dependency_enabled" {
+  description = "Whether the Datadog Agent container is a dependency for other containers"
+  type        = bool
+  default     = false
+}
+
+variable "dd_health_check" {
+  description = "Datadog Agent health check configuration"
+  type = object({
+    command      = optional(list(string))
+    interval     = optional(number)
+    retries      = optional(number)
+    start_period = optional(number)
+    timeout      = optional(number)
+  })
+  default = {
+    command      = ["CMD-SHELL", "/probe.sh"]
+    interval     = 15
+    retries      = 3
+    start_period = 60
+    timeout      = 5
+  }
+}
+
 variable "dd_site" {
   description = "Datadog Site"
   type        = string
@@ -36,6 +66,18 @@ variable "dd_environment" {
   description = "Datadog Agent container environment variables"
   type        = list(map(string))
   default     = [{}]
+}
+
+variable "dd_tags" {
+  description = "Datadog Agent global tags (eg. `key1:value1, key2:value2`)"
+  type        = string
+  default     = null
+}
+
+variable "dd_cluster_name" {
+  description = "Datadog cluster name."
+  type        = string
+  default     = null
 }
 
 variable "dd_service" {
@@ -75,7 +117,7 @@ variable "dd_dogstatsd" {
     error_message = "The Datadog Dogstatsd configuration must be defined."
   }
   validation {
-    condition = var.dd_dogstatsd.dogstatsd_cardinality == "low" || var.dd_dogstatsd.dogstatsd_cardinality == "orchestrator" || var.dd_dogstatsd.dogstatsd_cardinality == "high"
+    condition     = var.dd_dogstatsd.dogstatsd_cardinality == "low" || var.dd_dogstatsd.dogstatsd_cardinality == "orchestrator" || var.dd_dogstatsd.dogstatsd_cardinality == "high"
     error_message = "The Datadog Dogstatsd cardinality must be one of 'low', 'orchestrator', or 'high'."
   }
 }
@@ -93,6 +135,65 @@ variable "dd_apm" {
   validation {
     condition     = var.dd_apm != null
     error_message = "The Datadog APM configuration must be defined."
+  }
+}
+
+variable "dd_log_collection" {
+  description = "Configuration for Datadog Log Collection"
+  type = object({
+    enabled                          = optional(bool, true)
+    registry                         = optional(string, "public.ecr.aws/aws-observability/aws-for-fluent-bit")
+    image_version                    = optional(string, "stable")
+    cpu                              = optional(number)
+    memory_limit_mib                 = optional(number)
+    is_log_router_essential          = optional(bool, false)
+    is_log_router_dependency_enabled = optional(bool, false)
+    log_router_health_check = optional(object({
+      command      = optional(list(string))
+      interval     = optional(number)
+      retries      = optional(number)
+      start_period = optional(number)
+      timeout      = optional(number)
+      }),
+      {
+        command      = ["CMD-SHELL", "exit 0"]
+        interval     = 5
+        retries      = 3
+        start_period = 15
+        timeout      = 5
+      }
+    )
+    log_driver_configuration = optional(object({
+      host_endpoint = optional(string, "http-intake.logs.datadoghq.com")
+      tls           = optional(bool)
+      compress      = optional(string)
+      service_name  = optional(string)
+      source_name   = optional(string)
+      message_key   = optional(string)
+      }),
+      {
+        host_endpoint = "http-intake.logs.datadoghq.com"
+      }
+    )
+  })
+  default = {
+    enabled                 = false
+    is_log_router_essential = false
+    log_driver_configuration = {
+      host_endpoint = "http-intake.logs.datadoghq.com"
+    }
+  }
+  validation {
+    condition     = var.dd_log_collection != null
+    error_message = "The Datadog Log Collection configuration must be defined."
+  }
+  validation {
+    condition     = var.dd_log_collection.log_driver_configuration != null
+    error_message = "The Datadog Log Collection log driver configuration must be defined."
+  }
+  validation {
+    condition     = var.dd_log_collection.log_driver_configuration.host_endpoint != null
+    error_message = "The Datadog Log Collection log driver configuration host endpoint must be defined."
   }
 }
 

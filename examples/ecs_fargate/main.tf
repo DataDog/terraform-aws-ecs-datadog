@@ -6,25 +6,33 @@ module "ecs_task" {
   source = "../../modules/ecs_fargate"
 
   # Configure Datadog
-  dd_api_key = var.dd_api_key
-  dd_api_key_secret_arn = var.dd_api_key_secret_arn
-  dd_site    = var.dd_site
-  dd_service = var.dd_service
+  dd_api_key                       = var.dd_api_key
+  dd_api_key_secret_arn            = var.dd_api_key_secret_arn
+  dd_site                          = var.dd_site
+  dd_service                       = var.dd_service
+  dd_tags                          = "team:cont-p, owner:container-monitoring"
+  dd_essential                     = true
+  dd_is_datadog_dependency_enabled = true
 
   dd_environment = [
     {
-      name  = "DD_TAGS",
-      value = "team:cont-p, owner:container-monitoring"
+      name  = "DD_CUSTOM_ENV_VAR",
+      value = "custom_value",
     },
   ]
 
   dd_dogstatsd = {
-    dogstatsd_cardinality = "high",
+    dogstatsd_cardinality    = "high",
     origin_detection_enabled = true,
   }
 
   dd_apm = {
     enabled = true,
+  }
+
+  dd_log_collection = {
+    enabled                          = true,
+    is_log_router_dependency_enabled = true,
   }
 
   # Configure Task Definition

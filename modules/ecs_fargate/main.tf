@@ -6,7 +6,8 @@ resource "aws_ecs_task_definition" "this" {
 
   container_definitions = jsonencode(
     concat(
-      [local.dd_agent_container],
+      local.dd_agent_container,
+      local.dd_log_container,
       [for k, v in local.modified_container_definitions : v],
     )
   )
@@ -26,7 +27,7 @@ resource "aws_ecs_task_definition" "this" {
   # Prioritize the user-provided task execution role over the one created by the module
   execution_role_arn = var.execution_role_arn != null ? var.execution_role_arn : (length(aws_iam_role.new_ecs_task_execution_role) > 0 ? aws_iam_role.new_ecs_task_execution_role[0].arn : null)
 
-  family             = var.family
+  family = var.family
 
   # Fargate incompatible parameter
   dynamic "inference_accelerator" {
@@ -74,7 +75,7 @@ resource "aws_ecs_task_definition" "this" {
     }
   }
 
-  skip_destroy  = var.skip_destroy
+  skip_destroy = var.skip_destroy
   # Prioritize the user-provided task role over the one created by the module
   task_role_arn = var.task_role_arn != null ? var.task_role_arn : (length(aws_iam_role.new_ecs_task_role) > 0 ? aws_iam_role.new_ecs_task_role[0].arn : null)
 

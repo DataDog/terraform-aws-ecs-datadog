@@ -84,8 +84,8 @@ resource "aws_iam_role_policy_attachment" "new_role_dd_secret" {
 # in order to add permissions for the ecs_fargate check
 
 locals {
-  edit_task_role    = var.task_role_arn != null
-  create_task_role  = var.task_role_arn == null
+  edit_task_role   = var.task_role_arn != null
+  create_task_role = var.task_role_arn == null
 }
 
 # ==============================

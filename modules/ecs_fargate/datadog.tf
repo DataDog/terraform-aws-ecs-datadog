@@ -1,6 +1,34 @@
 locals {
+  # Datadog Firelens log configuration
+  dd_firelens_log_configuration = var.dd_log_collection.enabled ? merge(
+    {
+      logDriver = "awsfirelens"
+      options = merge(
+        {
+          provider    = "ecs"
+          Name        = "datadog"
+          Host        = "http-intake.logs.datadoghq.com"
+          TLS         = "on"
+          retry_limit = "2"
+        },
+        var.dd_log_collection.log_driver_configuration.service_name != null ? { dd_service = var.dd_log_collection.log_driver_configuration.service_name } : {},
+        var.dd_log_collection.log_driver_configuration.source_name != null ? { dd_source = var.dd_log_collection.log_driver_configuration.source_name } : {},
+        var.dd_tags != null ? { dd_tags = var.dd_tags } : {},
+        var.dd_api_key != null ? { apikey = var.dd_api_key } : {}
+      )
+    },
+    var.dd_api_key_secret_arn != null ? {
+      secretOptions = [
+        {
+          name      = "apikey"
+          valueFrom = var.dd_api_key_secret_arn
+        }
+      ]
+    } : {}
+  ) : null
+
   # Application container modifications
-  is_linux = var.runtime_platform == null || var.runtime_platform.operating_system_family == null || var.runtime_platform.operating_system_family == "LINUX"
+  is_linux            = var.runtime_platform == null || var.runtime_platform.operating_system_family == null || var.runtime_platform.operating_system_family == "LINUX"
   is_apm_socket_mount = var.dd_apm.enabled && var.dd_apm.socket_enabled && local.is_linux
   is_dsd_socket_mount = var.dd_dogstatsd.enabled && var.dd_dogstatsd.socket_enabled && local.is_linux
   is_apm_dsd_volume   = local.is_apm_socket_mount || local.is_dsd_socket_mount
@@ -34,6 +62,20 @@ locals {
     }
   ] : []
 
+  agent_dependency = var.dd_is_datadog_dependency_enabled && var.dd_health_check.command != null ? [
+    {
+      containerName = "datadog-agent"
+      condition     = "HEALTHY"
+    }
+  ] : []
+
+  log_router_dependency = var.dd_log_collection.is_log_router_dependency_enabled && var.dd_log_collection.log_router_health_check.command != null && local.dd_firelens_log_configuration != null ? [
+    {
+      containerName = "datadog-log-router"
+      condition     = "HEALTHY"
+    }
+  ] : []
+
   modified_container_definitions = [
     for container in var.container_definitions : merge(
       container,
@@ -50,7 +92,14 @@ locals {
           lookup(container, "mountPoints", []),
           local.apm_dsd_mount
         )
-      }
+        dependsOn = concat(
+          lookup(container, "dependsOn", []),
+          local.agent_dependency,
+          local.log_router_dependency,
+        )
+      },
+      # Only override the log configuration if the Datadog firelens configuration exists
+      local.dd_firelens_log_configuration != null ? { logConfiguration = local.dd_firelens_log_configuration } : {}
     )
   ]
 
@@ -74,8 +123,9 @@ locals {
       { key = "DD_SERVICE", value = var.dd_service },
       { key = "DD_ENV", value = var.dd_env },
       { key = "DD_VERSION", value = var.dd_version },
-      { key = "DD_DOGSTATSD_TAG_CARDINALITY", value = var.dd_dogstatsd.dogstatsd_cardinality }
-      # TODO: clusterName, ddTags, etc.
+      { key = "DD_DOGSTATSD_TAG_CARDINALITY", value = var.dd_dogstatsd.dogstatsd_cardinality },
+      { key = "DD_TAGS", value = var.dd_tags },
+      { key = "DD_CLUSTER_NAME", value = var.dd_cluster_name }
     ] : { name = pair.key, value = pair.value } if pair.value != null
   ]
 
@@ -97,28 +147,74 @@ locals {
   )
 
   # Datadog Agent container definition
-  dd_agent_container = {
-    name        = "datadog-agent"
-    image       = "${var.dd_registry}:${var.dd_image_version}"
-    environment = local.dd_agent_env
-    secrets = var.dd_api_key_secret_arn != null ? [
+  dd_agent_container = [
+    merge(
       {
-        name      = "DD_API_KEY"
-        valueFrom = var.dd_api_key_secret_arn
-      }
-    ] : []
-    portMappings = [
-      {
-        containerPort = 8125
-        hostPort      = 8125
-        protocol      = "udp"
+        name        = "datadog-agent"
+        image       = "${var.dd_registry}:${var.dd_image_version}"
+        essential   = var.dd_essential
+        environment = local.dd_agent_env
+        secrets = var.dd_api_key_secret_arn != null ? [
+          {
+            name      = "DD_API_KEY"
+            valueFrom = var.dd_api_key_secret_arn
+          }
+        ] : []
+        portMappings = [
+          {
+            containerPort = 8125
+            hostPort      = 8125
+            protocol      = "udp"
+          },
+          {
+            containerPort = 8126
+            hostPort      = 8126
+            protocol      = "tcp"
+          }
+        ],
+        mountPoints      = local.apm_dsd_mount,
+        logConfiguration = local.dd_firelens_log_configuration,
+        dependsOn        = var.dd_log_collection.is_log_router_dependency_enabled && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
       },
-      {
-        containerPort = 8126
-        hostPort      = 8126
-        protocol      = "tcp"
+      var.dd_health_check.command == null ? {} : {
+        healthCheck = {
+          command     = var.dd_health_check.command
+          interval    = var.dd_health_check.interval
+          timeout     = var.dd_health_check.timeout
+          retries     = var.dd_health_check.retries
+          startPeriod = var.dd_health_check.start_period
+        }
       }
-    ],
-    mountPoints = local.apm_dsd_mount
-  }
+    )
+  ]
+
+  # Datadog log router container definition
+  dd_log_container = var.dd_log_collection.enabled ? [
+    merge(
+      {
+        name      = "datadog-log-router"
+        image     = "${var.dd_log_collection.registry}:${var.dd_log_collection.image_version}"
+        essential = var.dd_log_collection.is_log_router_essential
+        firelensConfiguration = {
+          type = "fluentbit"
+          options = {
+            enable-ecs-log-metadata = "true"
+          }
+        }
+        cpu              = var.dd_log_collection.cpu
+        memory_limit_mib = var.dd_log_collection.memory_limit_mib
+        user             = "0"
+      },
+      var.dd_log_collection.log_router_health_check.command == null ? {} : {
+        healthCheck = {
+          command     = var.dd_log_collection.log_router_health_check.command
+          interval    = var.dd_log_collection.log_router_health_check.interval
+          timeout     = var.dd_log_collection.log_router_health_check.timeout
+          retries     = var.dd_log_collection.log_router_health_check.retries
+          startPeriod = var.dd_log_collection.log_router_health_check.start_period
+        }
+      }
+    )
+  ] : []
+
 }
