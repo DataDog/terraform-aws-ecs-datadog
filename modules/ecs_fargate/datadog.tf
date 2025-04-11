@@ -1,3 +1,8 @@
+# Unless explicitly stated otherwise all files in this repository are licensed
+# under the Apache License Version 2.0.
+# This product includes software developed at Datadog (https://www.datadoghq.com/).
+# Copyright 2025-present Datadog, Inc.
+
 locals {
   # Datadog ECS task tags
   tags = {
@@ -78,6 +83,27 @@ locals {
     }
   ] : []
 
+  ust_env_vars = concat(
+    var.dd_env != null ? [
+      {
+        name  = "DD_ENV"
+        value = var.dd_env
+      }
+    ] : [],
+    var.dd_service != null ? [
+      {
+        name  = "DD_SERVICE"
+        value = var.dd_service
+      }
+    ] : [],
+    var.dd_version != null ? [
+      {
+        name  = "DD_VERSION"
+        value = var.dd_version
+      }
+    ] : [],
+  )
+
   agent_dependency = var.dd_is_datadog_dependency_enabled && var.dd_health_check.command != null ? [
     {
       containerName = "datadog-agent"
@@ -110,6 +136,7 @@ locals {
           local.dsd_socket_var,
           local.apm_socket_var,
           local.dsd_port_var,
+          local.ust_env_vars,
         ),
         # Append new volume mounts to any existing mountPoints.
         mountPoints = concat(
@@ -177,9 +204,6 @@ locals {
     for pair in [
       { key = "DD_API_KEY", value = var.dd_api_key },
       { key = "DD_SITE", value = var.dd_site },
-      { key = "DD_SERVICE", value = var.dd_service },
-      { key = "DD_ENV", value = var.dd_env },
-      { key = "DD_VERSION", value = var.dd_version },
       { key = "DD_DOGSTATSD_TAG_CARDINALITY", value = var.dd_dogstatsd.dogstatsd_cardinality },
       { key = "DD_TAGS", value = var.dd_tags },
       { key = "DD_CLUSTER_NAME", value = var.dd_cluster_name }
@@ -213,6 +237,7 @@ locals {
     local.dynamic_env,
     local.origin_detection_vars,
     local.cws_vars,
+    local.ust_env_vars,
     var.dd_environment,
   )
 

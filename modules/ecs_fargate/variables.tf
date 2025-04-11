@@ -1,3 +1,8 @@
+# Unless explicitly stated otherwise all files in this repository are licensed
+# under the Apache License Version 2.0.
+# This product includes software developed at Datadog (https://www.datadoghq.com/).
+# Copyright 2025-present Datadog, Inc.
+
 ################################################################################
 # Datadog ECS Fargate Configuration
 ################################################################################
@@ -63,7 +68,7 @@ variable "dd_site" {
 }
 
 variable "dd_environment" {
-  description = "Datadog Agent container environment variables"
+  description = "Datadog Agent container environment variables. Highest precedence and overwrites other environment variables defined by the module"
   type        = list(map(string))
   default     = [{}]
 }
@@ -75,7 +80,7 @@ variable "dd_tags" {
 }
 
 variable "dd_cluster_name" {
-  description = "Datadog cluster name."
+  description = "Datadog cluster name"
   type        = string
   default     = null
 }
@@ -98,6 +103,16 @@ variable "dd_version" {
   default     = null
 }
 
+variable "dd_checks_cardinality" {
+  description = "Datadog Agent checks cardinality"
+  type        = string
+  default     = null
+  validation {
+    condition     = var.dd_checks_cardinality == null || can(contains(["low", "orchestrator", "high"], var.dd_checks_cardinality))
+    error_message = "The Datadog Agent checks cardinality must be one of 'low', 'orchestrator', 'high', or null."
+  }
+}
+
 variable "dd_dogstatsd" {
   description = "Configuration for Datadog DogStatsD"
   type = object({
@@ -117,8 +132,8 @@ variable "dd_dogstatsd" {
     error_message = "The Datadog Dogstatsd configuration must be defined."
   }
   validation {
-    condition     = var.dd_dogstatsd.dogstatsd_cardinality == "low" || var.dd_dogstatsd.dogstatsd_cardinality == "orchestrator" || var.dd_dogstatsd.dogstatsd_cardinality == "high"
-    error_message = "The Datadog Dogstatsd cardinality must be one of 'low', 'orchestrator', or 'high'."
+    condition     = var.dd_dogstatsd.dogstatsd_cardinality == null || can(contains(["low", "orchestrator", "high"], var.dd_dogstatsd.dogstatsd_cardinality))
+    error_message = "The Datadog Dogstatsd cardinality must be one of 'low', 'orchestrator', 'high', or null."
   }
 }
 
@@ -236,8 +251,10 @@ variable "enable_fault_injection" {
 
 variable "ephemeral_storage" {
   description = "The amount of ephemeral storage to allocate for the task. This parameter is used to expand the total amount of ephemeral storage available, beyond the default amount, for tasks hosted on AWS Fargate"
-  type        = any
-  default     = {}
+  type = object({
+    size_in_gib = number
+  })
+  default = null
 }
 
 variable "execution_role_arn" {
@@ -253,9 +270,12 @@ variable "family" {
 
 # Not Fargate Compatible
 variable "inference_accelerator" {
-  description = "Configuration block(s) with Inference Accelerators settings"
-  type        = any
-  default     = []
+  description = "Configuration list with Inference Accelerators settings"
+  type = list(object({
+    device_name = string
+    device_type = string
+  }))
+  default = []
 }
 
 # Not Fargate Compatible: must always be "task"
@@ -287,7 +307,7 @@ variable "pid_mode" {
 
 # Not Fargate Compatible
 variable "placement_constraints" {
-  description = "Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the task definition, see `placement_constraints` for setting at the service"
+  description = "Configuration list for rules that are taken into consideration during task placement (up to max of 10)"
   type = list(object({
     type       = string
     expression = string
@@ -296,7 +316,7 @@ variable "placement_constraints" {
 }
 
 variable "proxy_configuration" {
-  description = "Configuration block for the App Mesh proxy"
+  description = "Configuration for the App Mesh proxy"
   type = object({
     container_name = string
     properties     = map(any)
@@ -312,7 +332,7 @@ variable "requires_compatibilities" {
 }
 
 variable "runtime_platform" {
-  description = "Configuration block for `runtime_platform` that containers in your task may use"
+  description = "Configuration for `runtime_platform` that containers in your task may use"
   type = object({
     cpu_architecture        = optional(string, "LINUX")
     operating_system_family = optional(string, "X86_64")
@@ -348,7 +368,39 @@ variable "track_latest" {
 }
 
 variable "volumes" {
-  description = "Configuration block for volumes that containers in your task may use"
-  type        = any
-  default     = null
+  description = "A list of volume definitions that containers in your task may use"
+  type = list(object({
+    name                = string
+    host_path           = optional(string)
+    configure_at_launch = optional(bool)
+
+    docker_volume_configuration = optional(object({
+      autoprovision = optional(bool)
+      driver        = optional(string)
+      driver_opts   = optional(map(any))
+      labels        = optional(map(any))
+      scope         = optional(string)
+    }))
+
+    efs_volume_configuration = optional(object({
+      file_system_id          = string
+      root_directory          = optional(string)
+      transit_encryption      = optional(string)
+      transit_encryption_port = optional(number)
+      authorization_config = optional(object({
+        access_point_id = optional(string)
+        iam             = optional(string)
+      }))
+    }))
+
+    fsx_windows_file_server_volume_configuration = optional(object({
+      file_system_id = string
+      root_directory = optional(string)
+      authorization_config = optional(object({
+        credentials_parameter = string
+        domain                = string
+      }))
+    }))
+  }))
+  default = []
 }

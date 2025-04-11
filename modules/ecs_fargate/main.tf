@@ -1,3 +1,8 @@
+# Unless explicitly stated otherwise all files in this repository are licensed
+# under the Apache License Version 2.0.
+# This product includes software developed at Datadog (https://www.datadoghq.com/).
+# Copyright 2025-present Datadog, Inc.
+
 ################################################################################
 # Task Definition
 ################################################################################
@@ -16,7 +21,7 @@ resource "aws_ecs_task_definition" "this" {
   cpu = var.cpu
 
   dynamic "ephemeral_storage" {
-    for_each = length(var.ephemeral_storage) > 0 ? [var.ephemeral_storage] : []
+    for_each = var.ephemeral_storage != null ? [var.ephemeral_storage] : []
 
     content {
       size_in_gib = ephemeral_storage.value.size_in_gib
@@ -32,7 +37,7 @@ resource "aws_ecs_task_definition" "this" {
 
   # Fargate incompatible parameter
   dynamic "inference_accelerator" {
-    for_each = var.inference_accelerator
+    for_each = var.inference_accelerator != null ? var.inference_accelerator : []
 
     content {
       device_name = inference_accelerator.value.device_name
@@ -47,7 +52,7 @@ resource "aws_ecs_task_definition" "this" {
   pid_mode     = var.pid_mode
 
   dynamic "placement_constraints" {
-    for_each = var.placement_constraints
+    for_each = var.placement_constraints != null ? var.placement_constraints : []
 
     content {
       expression = try(placement_constraints.value.expression, null)
@@ -85,7 +90,7 @@ resource "aws_ecs_task_definition" "this" {
 
     content {
       dynamic "docker_volume_configuration" {
-        for_each = try([volume.value.docker_volume_configuration], [])
+        for_each = try(volume.value.docker_volume_configuration != null ? [volume.value.docker_volume_configuration] : [], [])
 
         content {
           autoprovision = try(docker_volume_configuration.value.autoprovision, null)
@@ -97,11 +102,11 @@ resource "aws_ecs_task_definition" "this" {
       }
 
       dynamic "efs_volume_configuration" {
-        for_each = try([volume.value.efs_volume_configuration], [])
+        for_each = try(volume.value.efs_volume_configuration != null ? [volume.value.efs_volume_configuration] : [], [])
 
         content {
           dynamic "authorization_config" {
-            for_each = try([efs_volume_configuration.value.authorization_config], [])
+            for_each = try(efs_volume_configuration.value.authorization_config != null ? [efs_volume_configuration.value.authorization_config] : [], [])
 
             content {
               access_point_id = try(authorization_config.value.access_point_id, null)
@@ -117,11 +122,11 @@ resource "aws_ecs_task_definition" "this" {
       }
 
       dynamic "fsx_windows_file_server_volume_configuration" {
-        for_each = try([volume.value.fsx_windows_file_server_volume_configuration], [])
+        for_each = try(volume.value.fsx_windows_file_server_volume_configuration != null ? [volume.value.fsx_windows_file_server_volume_configuration] : [], [])
 
         content {
           dynamic "authorization_config" {
-            for_each = try([fsx_windows_file_server_volume_configuration.value.authorization_config], [])
+            for_each = try(fsx_windows_file_server_volume_configuration.value.authorization_config != null ? [fsx_windows_file_server_volume_configuration.value.authorization_config] : [], [])
 
             content {
               credentials_parameter = authorization_config.value.credentials_parameter
@@ -152,5 +157,11 @@ resource "aws_ecs_task_definition" "this" {
 
   lifecycle {
     create_before_destroy = true
+
+    # Attach any complex Datadog configuration rules (multiple variables) 
+    precondition {
+      condition = var.dd_is_datadog_dependency_enabled == true && var.dd_cws.enabled == true
+      error_message = "The Datadog Agent container dependency must be enabled for CWS to be stable. Please set `dd_is_datadog_dependency_enabled` to `true`."
+    }
   }
 }
