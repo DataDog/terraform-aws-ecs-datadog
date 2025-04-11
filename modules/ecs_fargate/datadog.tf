@@ -1,4 +1,9 @@
 locals {
+  # Datadog ECS task tags
+  tags = {
+    dd_ecs_terraform_module = "1.0.0"
+  }
+
   # Datadog Firelens log configuration
   dd_firelens_log_configuration = var.dd_log_collection.enabled ? merge(
     {
@@ -32,6 +37,17 @@ locals {
   is_apm_socket_mount = var.dd_apm.enabled && var.dd_apm.socket_enabled && local.is_linux
   is_dsd_socket_mount = var.dd_dogstatsd.enabled && var.dd_dogstatsd.socket_enabled && local.is_linux
   is_apm_dsd_volume   = local.is_apm_socket_mount || local.is_dsd_socket_mount
+
+  cws_entry_point_prefix = ["/cws-instrumentation-volume/cws-instrumentation", "trace", "--"]
+  is_cws_supported       = local.is_linux && var.dd_cws.enabled
+
+  cws_mount = local.is_cws_supported ? [
+    {
+      sourceVolume  = "cws-instrumentation-volume"
+      containerPath = "/cws-instrumentation-volume"
+      readOnly      = false
+    }
+  ] : []
 
   apm_dsd_mount = local.is_apm_dsd_volume ? [
     {
@@ -76,9 +92,17 @@ locals {
     }
   ] : []
 
+  cws_dependency = local.is_cws_supported ? [
+    {
+      containerName = "cws-instrumentation-init"
+      condition     = "SUCCESS"
+    }
+  ] : []
+
   modified_container_definitions = [
-    for container in var.container_definitions : merge(
+    for container in jsondecode(var.container_definitions) : merge(
       container,
+      # Note: only configure CWS on container if entryPoint is set
       {
         # Append new environment variables to any existing ones.
         environment = concat(
@@ -90,13 +114,28 @@ locals {
         # Append new volume mounts to any existing mountPoints.
         mountPoints = concat(
           lookup(container, "mountPoints", []),
-          local.apm_dsd_mount
+          local.apm_dsd_mount,
+          local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? local.cws_mount : [],
         )
         dependsOn = concat(
           lookup(container, "dependsOn", []),
           local.agent_dependency,
           local.log_router_dependency,
+          local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? local.cws_dependency : [],
         )
+        entryPoint = local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? concat(
+          local.cws_entry_point_prefix,
+          lookup(container, "entryPoint", []),
+        ) : null
+        linuxParameters = local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? {
+          # Note: SYS_PTRACE is the only supported capability on Fargate
+          capabilities = {
+            add = [
+              "SYS_PTRACE",
+            ]
+            drop = []
+          }
+        } : null
       },
       # Only override the log configuration if the Datadog firelens configuration exists
       local.dd_firelens_log_configuration != null ? { logConfiguration = local.dd_firelens_log_configuration } : {}
@@ -110,12 +149,30 @@ locals {
     }
   ] : []
 
+  cws_volume = local.is_cws_supported ? [
+    {
+      name = "cws-instrumentation-volume"
+    }
+  ] : []
+
   modified_volumes = concat(
-    [for k, v in coalesce(var.volumes, {}) : v],
-    local.apm_dsd_volume
+    [for k, v in coalesce(var.volumes, []) : v],
+    local.apm_dsd_volume,
+    local.cws_volume,
   )
 
   # Datadog Agent container environment variables
+  base_env = [
+    {
+      name  = "ECS_FARGATE"
+      value = "true"
+    },
+    {
+      name  = "DD_ECS_TASK_COLLECTION_ENABLED"
+      value = "true"
+    }
+  ]
+
   dynamic_env = [
     for pair in [
       { key = "DD_API_KEY", value = var.dd_api_key },
@@ -140,10 +197,23 @@ locals {
     }
   ] : []
 
+  cws_vars = local.is_cws_supported ? [
+    {
+      name  = "DD_RUNTIME_SECURITY_CONFIG_ENABLED"
+      value = "true"
+    },
+    {
+      name  = "DD_RUNTIME_SECURITY_CONFIG_EBPFLESS_ENABLED"
+      value = "true"
+    }
+  ] : []
+
   dd_agent_env = concat(
-    var.dd_environment,
+    local.base_env,
     local.dynamic_env,
     local.origin_detection_vars,
+    local.cws_vars,
+    var.dd_environment,
   )
 
   # Datadog Agent container definition
@@ -175,6 +245,8 @@ locals {
         mountPoints      = local.apm_dsd_mount,
         logConfiguration = local.dd_firelens_log_configuration,
         dependsOn        = var.dd_log_collection.is_log_router_dependency_enabled && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
+        systemControls   = []
+        volumesFrom      = []
       },
       var.dd_health_check.command == null ? {} : {
         healthCheck = {
@@ -204,6 +276,11 @@ locals {
         cpu              = var.dd_log_collection.cpu
         memory_limit_mib = var.dd_log_collection.memory_limit_mib
         user             = "0"
+        mountPoints      = []
+        environment      = []
+        portMappings     = []
+        systemControls   = []
+        volumesFrom      = []
       },
       var.dd_log_collection.log_router_health_check.command == null ? {} : {
         healthCheck = {
@@ -217,4 +294,22 @@ locals {
     )
   ] : []
 
+  # Datadog CWS tracer definition
+  dd_cws_container = local.is_cws_supported ? [
+    {
+      name             = "cws-instrumentation-init"
+      image            = "datadog/cws-instrumentation:latest"
+      cpu              = var.dd_cws.cpu
+      memory_limit_mib = var.dd_cws.memory_limit_mib
+      user             = "0"
+      essential        = false
+      entryPoint       = []
+      command          = ["/cws-instrumentation", "setup", "--cws-volume-mount", "/cws-instrumentation-volume"]
+      mountPoints      = local.cws_mount
+      environment      = []
+      portMappings     = []
+      systemControls   = []
+      volumesFrom      = []
+    }
+  ] : []
 }

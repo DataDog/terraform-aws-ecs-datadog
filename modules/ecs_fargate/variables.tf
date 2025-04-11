@@ -197,12 +197,28 @@ variable "dd_log_collection" {
   }
 }
 
+variable "dd_cws" {
+  description = "Configuration for Datadog Cloud Workload Security (CWS)"
+  type = object({
+    enabled          = bool
+    cpu              = optional(number)
+    memory_limit_mib = optional(number)
+  })
+  default = {
+    enabled = false
+  }
+  validation {
+    condition     = var.dd_cws != null
+    error_message = "The Datadog Cloud Workload Security (CWS) configuration must be defined."
+  }
+}
+
 ################################################################################
 # Task Definition
 ################################################################################
 
 variable "container_definitions" {
-  description = "A map of valid [container definitions](http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html). Please note that you should only provide values that are part of the container definition document"
+  description = "A list of valid [container definitions](http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html). Please note that you should only provide values that are part of the container definition document"
   type        = any
 }
 
@@ -298,8 +314,8 @@ variable "requires_compatibilities" {
 variable "runtime_platform" {
   description = "Configuration block for `runtime_platform` that containers in your task may use"
   type = object({
-    cpu_architecture        = string
-    operating_system_family = string
+    cpu_architecture        = optional(string, "LINUX")
+    operating_system_family = optional(string, "X86_64")
   })
   default = {
     operating_system_family = "LINUX"
@@ -316,7 +332,7 @@ variable "skip_destroy" {
 variable "tags" {
   description = "A map of additional tags to add to the task definition/set created"
   type        = map(string)
-  default     = {}
+  default     = null
 }
 
 variable "task_role_arn" {

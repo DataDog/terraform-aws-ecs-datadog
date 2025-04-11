@@ -8,6 +8,7 @@ resource "aws_ecs_task_definition" "this" {
     concat(
       local.dd_agent_container,
       local.dd_log_container,
+      local.dd_cws_container,
       [for k, v in local.modified_container_definitions : v],
     )
   )
@@ -139,7 +140,10 @@ resource "aws_ecs_task_definition" "this" {
     }
   }
 
-  tags = var.tags
+  tags = merge(
+    var.tags,
+    local.tags,
+  )
 
   depends_on = [
     aws_iam_role.new_ecs_task_role,

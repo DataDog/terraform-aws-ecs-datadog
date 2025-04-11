@@ -35,20 +35,24 @@ module "ecs_task" {
     is_log_router_dependency_enabled = true,
   }
 
+  dd_cws = {
+    enabled = true,
+  }
+
   # Configure Task Definition
   family = "datadog-terraform-app"
-  container_definitions = {
-    dogstatsd = {
-      name      = "datadog-dogstatsd-app",
-      image     = "ghcr.io/datadog/apps-dogstatsd:main",
-      essential = false,
+  container_definitions = jsonencode([
+    {
+      name           = "datadog-dogstatsd-app",
+      image          = "ghcr.io/datadog/apps-dogstatsd:main",
+      essential      = false,
     },
-    apm = {
-      name      = "datadog-apm-app",
-      image     = "ghcr.io/datadog/apps-tracegen:main",
-      essential = false,
+    {
+      name           = "datadog-apm-app",
+      image          = "ghcr.io/datadog/apps-tracegen:main",
+      essential      = false,
     },
-    cws = {
+    {
       name      = "datadog-cws-app",
       image     = "public.ecr.aws/ubuntu/ubuntu:22.04_stable",
       essential = true,
@@ -56,8 +60,12 @@ module "ecs_task" {
         "/usr/bin/bash",
         "-c",
         "cp /usr/bin/bash /tmp/malware; chmod u+s /tmp/malware; apt update;apt install -y curl wget; /tmp/malware -c 'while true; do wget https://google.com; sleep 60; done'"
-      ]
+      ],
     }
+  ])
+  runtime_platform = {
+    cpu_architecture        = "ARM64",
+    operating_system_family = "LINUX",
   }
   requires_compatibilities = ["FARGATE"]
 }
