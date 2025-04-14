@@ -38,8 +38,8 @@ resource "aws_iam_role" "ecs_task_role" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
         }
@@ -51,13 +51,13 @@ resource "aws_iam_role" "ecs_task_role" {
 resource "aws_iam_policy" "ecs_task_policy" {
   name        = "ecs_task_policy"
   description = "Policy for ECS task role to access EFS"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "AllowEFSMountAndWrite"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "AllowEFSMountAndWrite"
+        Effect = "Allow"
+        Action = [
           "elasticfilesystem:ClientMount",
           "elasticfilesystem:ClientWrite",
           "elasticfilesystem:ClientRootAccess"
@@ -73,6 +73,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_role_attachment" {
   policy_arn = aws_iam_policy.ecs_task_policy.arn
 }
 
+# Tests that the module is able to create a task
+# with all the AWS task definition parameters
 module "ecs_task_all_task_features" {
   source = "../../modules/ecs_fargate"
 
@@ -142,10 +144,48 @@ module "ecs_task_all_task_features" {
       }
     }
   ]
-  skip_destroy = false
+  skip_destroy          = false
   inference_accelerator = null
   runtime_platform = {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
+  }
+}
+
+# Tests that the Datadog agent configuration on Windows is correct
+# In particular, we are checking APM, Dogstatsd, and `ecs.fargate` metrics
+module "ecs_fargate_task_windows" {
+  source = "../../modules/ecs_fargate"
+
+  dd_api_key = var.dd_api_key
+  dd_site    = var.dd_site
+  dd_service = var.dd_service
+
+  dd_apm = {
+    enabled = true
+  }
+
+  dd_dogstatsd = {
+    enabled = true
+  }
+
+  family = "windows-features"
+  container_definitions = jsonencode([
+    {
+      name      = "datadog-dogstatsd-app",
+      image     = "ghcr.io/datadog/apps-dogstatsd:main",
+      essential = false,
+    },
+    {
+      name      = "datadog-apm-app",
+      image     = "ghcr.io/datadog/apps-tracegen:main",
+      essential = true,
+    },
+  ])
+  cpu    = 1024
+  memory = 2048
+  runtime_platform = {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "WINDOWS_SERVER_2022_CORE"
   }
 }

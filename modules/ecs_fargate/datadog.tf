@@ -9,8 +9,11 @@ locals {
     dd_ecs_terraform_module = "1.0.0"
   }
 
+  is_linux               = var.runtime_platform == null || var.runtime_platform.operating_system_family == null || var.runtime_platform.operating_system_family == "LINUX"
+  is_fluentbit_supported = var.dd_log_collection.enabled && local.is_linux
+
   # Datadog Firelens log configuration
-  dd_firelens_log_configuration = var.dd_log_collection.enabled ? merge(
+  dd_firelens_log_configuration = local.is_fluentbit_supported ? merge(
     {
       logDriver = "awsfirelens"
       options = merge(
@@ -21,8 +24,8 @@ locals {
           TLS         = "on"
           retry_limit = "2"
         },
-        var.dd_log_collection.log_driver_configuration.service_name != null ? { dd_service = var.dd_log_collection.log_driver_configuration.service_name } : {},
-        var.dd_log_collection.log_driver_configuration.source_name != null ? { dd_source = var.dd_log_collection.log_driver_configuration.source_name } : {},
+        var.dd_log_collection.fluentbit_config.log_driver_configuration.service_name != null ? { dd_service = var.dd_log_collection.fluentbit_config.log_driver_configuration.service_name } : {},
+        var.dd_log_collection.fluentbit_config.log_driver_configuration.source_name != null ? { dd_source = var.dd_log_collection.fluentbit_config.log_driver_configuration.source_name } : {},
         var.dd_tags != null ? { dd_tags = var.dd_tags } : {},
         var.dd_api_key != null ? { apikey = var.dd_api_key } : {}
       )
@@ -38,7 +41,6 @@ locals {
   ) : null
 
   # Application container modifications
-  is_linux            = var.runtime_platform == null || var.runtime_platform.operating_system_family == null || var.runtime_platform.operating_system_family == "LINUX"
   is_apm_socket_mount = var.dd_apm.enabled && var.dd_apm.socket_enabled && local.is_linux
   is_dsd_socket_mount = var.dd_dogstatsd.enabled && var.dd_dogstatsd.socket_enabled && local.is_linux
   is_apm_dsd_volume   = local.is_apm_socket_mount || local.is_dsd_socket_mount
@@ -111,7 +113,7 @@ locals {
     }
   ] : []
 
-  log_router_dependency = var.dd_log_collection.is_log_router_dependency_enabled && var.dd_log_collection.log_router_health_check.command != null && local.dd_firelens_log_configuration != null ? [
+  log_router_dependency = var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled && var.dd_log_collection.fluentbit_config.log_router_health_check.command != null && local.dd_firelens_log_configuration != null ? [
     {
       containerName = "datadog-log-router"
       condition     = "HEALTHY"
@@ -269,7 +271,7 @@ locals {
         ],
         mountPoints      = local.apm_dsd_mount,
         logConfiguration = local.dd_firelens_log_configuration,
-        dependsOn        = var.dd_log_collection.is_log_router_dependency_enabled && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
+        dependsOn        = var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
         systemControls   = []
         volumesFrom      = []
       },
@@ -286,20 +288,20 @@ locals {
   ]
 
   # Datadog log router container definition
-  dd_log_container = var.dd_log_collection.enabled ? [
+  dd_log_container = local.is_fluentbit_supported ? [
     merge(
       {
         name      = "datadog-log-router"
-        image     = "${var.dd_log_collection.registry}:${var.dd_log_collection.image_version}"
-        essential = var.dd_log_collection.is_log_router_essential
+        image     = "${var.dd_log_collection.fluentbit_config.registry}:${var.dd_log_collection.fluentbit_config.image_version}"
+        essential = var.dd_log_collection.fluentbit_config.is_log_router_essential
         firelensConfiguration = {
           type = "fluentbit"
           options = {
             enable-ecs-log-metadata = "true"
           }
         }
-        cpu              = var.dd_log_collection.cpu
-        memory_limit_mib = var.dd_log_collection.memory_limit_mib
+        cpu              = var.dd_log_collection.fluentbit_config.cpu
+        memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
         user             = "0"
         mountPoints      = []
         environment      = []
@@ -307,13 +309,13 @@ locals {
         systemControls   = []
         volumesFrom      = []
       },
-      var.dd_log_collection.log_router_health_check.command == null ? {} : {
+      var.dd_log_collection.fluentbit_config.log_router_health_check.command == null ? {} : {
         healthCheck = {
-          command     = var.dd_log_collection.log_router_health_check.command
-          interval    = var.dd_log_collection.log_router_health_check.interval
-          timeout     = var.dd_log_collection.log_router_health_check.timeout
-          retries     = var.dd_log_collection.log_router_health_check.retries
-          startPeriod = var.dd_log_collection.log_router_health_check.start_period
+          command     = var.dd_log_collection.fluentbit_config.log_router_health_check.command
+          interval    = var.dd_log_collection.fluentbit_config.log_router_health_check.interval
+          timeout     = var.dd_log_collection.fluentbit_config.log_router_health_check.timeout
+          retries     = var.dd_log_collection.fluentbit_config.log_router_health_check.retries
+          startPeriod = var.dd_log_collection.fluentbit_config.log_router_health_check.start_period
         }
       }
     )

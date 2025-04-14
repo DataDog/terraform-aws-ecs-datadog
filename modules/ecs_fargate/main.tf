@@ -158,10 +158,14 @@ resource "aws_ecs_task_definition" "this" {
   lifecycle {
     create_before_destroy = true
 
-    # Attach any complex Datadog configuration rules (multiple variables) 
+    # Attach any complex Datadog configuration rules (multiple variables)
     precondition {
-      condition = var.dd_is_datadog_dependency_enabled == true && var.dd_cws.enabled == true
+      condition     = var.dd_cws.enabled == false || (var.dd_cws.enabled == true && var.dd_is_datadog_dependency_enabled == true)
       error_message = "The Datadog Agent container dependency must be enabled for CWS to be stable. Please set `dd_is_datadog_dependency_enabled` to `true`."
+    }
+    precondition {
+      condition     = var.dd_log_collection.enabled == false || (var.dd_log_collection.enabled == true && local.is_linux == true)
+      error_message = "Log collection is not supported on Windows. Please set `dd_log_collection.enabled` to `false`."
     }
   }
 }

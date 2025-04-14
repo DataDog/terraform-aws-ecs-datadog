@@ -36,8 +36,10 @@ module "datadog_ecs_fargate_task" {
   }
 
   dd_log_collection = {
-    enabled                          = true,
-    is_log_router_dependency_enabled = true,
+    enabled = false,
+    fluentbit_config = {
+      is_log_router_dependency_enabled = true,
+    }
   }
 
   dd_cws = {
@@ -55,12 +57,12 @@ module "datadog_ecs_fargate_task" {
     {
       name      = "datadog-apm-app",
       image     = "ghcr.io/datadog/apps-tracegen:main",
-      essential = false,
+      essential = true,
     },
     {
       name      = "datadog-cws-app",
       image     = "public.ecr.aws/ubuntu/ubuntu:22.04_stable",
-      essential = true,
+      essential = false,
       entryPoint = [
         "/usr/bin/bash",
         "-c",
