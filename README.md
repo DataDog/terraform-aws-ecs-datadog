@@ -1,4 +1,4 @@
-# Datadog Terraform module for AWS ECS Tasks
+# Datadog Terraform Modules for AWS ECS Tasks
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/DataDog/terraform-aws-lambda-datadog/blob/main/LICENSE)
 
@@ -6,9 +6,13 @@ Use this Terraform module to install Datadog monitoring for AWS Elastic Containe
 
 This Terraform module wraps the [aws_ecs_task_definition](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) resource and automatically configures your task definition for Datadog monitoring.
 
+**Warning: This root module is not intended for direct use.** This repository is a collection of Terraform submodules for different ECS Datadog task configurations.
+
 For more information on the ECS Fargate module, reference the [documentation](https://github.com/DataDog/terraform-ecs-datadog/blob/main/modules/ecs_fargate/README.md).
 
 ## Usage
+
+### ECS Fargate
 
 ```hcl
 module "datadog_ecs_fargate_task" {
