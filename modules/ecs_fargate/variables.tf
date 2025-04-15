@@ -156,7 +156,7 @@ variable "dd_apm" {
 variable "dd_log_collection" {
   description = "Configuration for Datadog Log Collection"
   type = object({
-    enabled = optional(bool, true)
+    enabled = optional(bool, false)
     fluentbit_config = optional(object({
       registry                         = optional(string, "public.ecr.aws/aws-observability/aws-for-fluent-bit")
       image_version                    = optional(string, "stable")
