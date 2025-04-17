@@ -64,7 +64,11 @@ module "ecs_fargate_task" {
 
 This module exposes the same arguments available in the [aws_ecs_task_definition](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) resource. However, because this module wraps that resource, it cannot support the exact same interface for configuration blocks defined by AWS. Instead, those blocks are represented as variables with nested attributes.
 
-As a result, configuration blocks must now be assigned using an equals sign. For example, `runtime_platform { ... }` becomes `runtime_platform = { ... }`. Additionally, blocks that support multiple instances (such as volumes) should now be provided as a list of objects. Refer to the examples below for more details.
+As a result, configuration blocks must now be assigned using an equals sign. For example, `runtime_platform { ... }` becomes `runtime_platform = { ... }`. Additionally, blocks that support multiple instances (such as volumes) should now be provided as a list of objects.
+
+One other minor difference is related to the way the `task_role_arn` and the `execution_role_arn` are provided. Instead of directly providing the value like `task_role_arn = "xxxxxx"`, you must provide the value wrapped in an object like `task_role = { arn = "xxxxxx" }`.
+
+Refer to the examples below for more details.
 
 #### aws_ecs_task_definition
 
@@ -102,6 +106,8 @@ resource "aws_ecs_task_definition" "example" {
     cpu_architecture        = "ARM64"
     operating_system_family = "LINUX"
   }
+
+  task_role_arn = "arn:aws:iam::123456789012:role/my-example-role"
 }
 ```
 
@@ -144,11 +150,17 @@ resource "datadog_ecs_fargate_task" "example" {
     }
   ]
 
-  # Instead of creating a configuration block for `runtime_platforms`,
-  # supply the definition directly to the argument `runtime_platforms`
+  # Instead of creating a configuration block for `runtime_platform`,
+  # supply the definition directly to the argument `runtime_platform`
   runtime_platform = {
     cpu_architecture        = "ARM64"
     operating_system_family = "LINUX"
+  }
+
+  # Instead of supplying the `task_role_arn` directly,
+  # provide it into the `arn` field of the `task_role` object.
+  task_role = {
+    arn = "arn:aws:iam::123456789012:role/my-example-role"
   }
 }
 ```
@@ -231,7 +243,7 @@ No modules.
 | <a name="input_dd_version"></a> [dd\_version](#input\_dd\_version) | The task version name. Used for tagging (UST) | `string` | `null` | no |
 | <a name="input_enable_fault_injection"></a> [enable\_fault\_injection](#input\_enable\_fault\_injection) | Enables fault injection and allows for fault injection requests to be accepted from the task's containers | `bool` | `false` | no |
 | <a name="input_ephemeral_storage"></a> [ephemeral\_storage](#input\_ephemeral\_storage) | The amount of ephemeral storage to allocate for the task. This parameter is used to expand the total amount of ephemeral storage available, beyond the default amount, for tasks hosted on AWS Fargate | <pre>object({<br/>    size_in_gib = number<br/>  })</pre> | `null` | no |
-| <a name="input_execution_role_arn"></a> [execution\_role\_arn](#input\_execution\_role\_arn) | ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume | `string` | `null` | no |
+| <a name="input_execution_role"></a> [execution\_role](#input\_execution\_role) | ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume | <pre>object({<br/>    arn = string<br/>  })</pre> | `null` | no |
 | <a name="input_family"></a> [family](#input\_family) | A unique name for your task definition | `string` | n/a | yes |
 | <a name="input_inference_accelerator"></a> [inference\_accelerator](#input\_inference\_accelerator) | Configuration list with Inference Accelerators settings | <pre>list(object({<br/>    device_name = string<br/>    device_type = string<br/>  }))</pre> | `[]` | no |
 | <a name="input_ipc_mode"></a> [ipc\_mode](#input\_ipc\_mode) | IPC resource namespace to be used for the containers in the task The valid values are `host`, `task`, and `none` | `string` | `null` | no |
@@ -244,7 +256,7 @@ No modules.
 | <a name="input_runtime_platform"></a> [runtime\_platform](#input\_runtime\_platform) | Configuration for `runtime_platform` that containers in your task may use | <pre>object({<br/>    cpu_architecture        = optional(string, "LINUX")<br/>    operating_system_family = optional(string, "X86_64")<br/>  })</pre> | <pre>{<br/>  "cpu_architecture": "X86_64",<br/>  "operating_system_family": "LINUX"<br/>}</pre> | no |
 | <a name="input_skip_destroy"></a> [skip\_destroy](#input\_skip\_destroy) | Whether to retain the old revision when the resource is destroyed or replacement is necessary | `bool` | `false` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of additional tags to add to the task definition/set created | `map(string)` | `null` | no |
-| <a name="input_task_role_arn"></a> [task\_role\_arn](#input\_task\_role\_arn) | The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services | `string` | `null` | no |
+| <a name="input_task_role"></a> [task\_role](#input\_task\_role) | The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services | <pre>object({<br/>    arn = string<br/>  })</pre> | `null` | no |
 | <a name="input_track_latest"></a> [track\_latest](#input\_track\_latest) | Whether should track latest ACTIVE task definition on AWS or the one created with the resource stored in state | `bool` | `false` | no |
 | <a name="input_volumes"></a> [volumes](#input\_volumes) | A list of volume definitions that containers in your task may use | <pre>list(object({<br/>    name                = string<br/>    host_path           = optional(string)<br/>    configure_at_launch = optional(bool)<br/><br/>    docker_volume_configuration = optional(object({<br/>      autoprovision = optional(bool)<br/>      driver        = optional(string)<br/>      driver_opts   = optional(map(any))<br/>      labels        = optional(map(any))<br/>      scope         = optional(string)<br/>    }))<br/><br/>    efs_volume_configuration = optional(object({<br/>      file_system_id          = string<br/>      root_directory          = optional(string)<br/>      transit_encryption      = optional(string)<br/>      transit_encryption_port = optional(number)<br/>      authorization_config = optional(object({<br/>        access_point_id = optional(string)<br/>        iam             = optional(string)<br/>      }))<br/>    }))<br/><br/>    fsx_windows_file_server_volume_configuration = optional(object({<br/>      file_system_id = string<br/>      root_directory = optional(string)<br/>      authorization_config = optional(object({<br/>        credentials_parameter = string<br/>        domain                = string<br/>      }))<br/>    }))<br/>  }))</pre> | `[]` | no |
 

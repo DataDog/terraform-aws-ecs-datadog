@@ -12,7 +12,6 @@ module "datadog_ecs_fargate_task" {
 
   # Configure Datadog
   dd_api_key                       = var.dd_api_key
-  dd_api_key_secret_arn            = var.dd_api_key_secret_arn
   dd_site                          = var.dd_site
   dd_service                       = var.dd_service
   dd_tags                          = "team:cont-p, owner:container-monitoring"

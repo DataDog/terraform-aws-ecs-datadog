@@ -30,11 +30,11 @@ locals {
         var.dd_api_key != null ? { apikey = var.dd_api_key } : {}
       )
     },
-    var.dd_api_key_secret_arn != null ? {
+    var.dd_api_key_secret != null ? {
       secretOptions = [
         {
           name      = "apikey"
-          valueFrom = var.dd_api_key_secret_arn
+          valueFrom = var.dd_api_key_secret.arn
         }
       ]
     } : {}
@@ -251,10 +251,10 @@ locals {
         image       = "${var.dd_registry}:${var.dd_image_version}"
         essential   = var.dd_essential
         environment = local.dd_agent_env
-        secrets = var.dd_api_key_secret_arn != null ? [
+        secrets = var.dd_api_key_secret != null ? [
           {
             name      = "DD_API_KEY"
-            valueFrom = var.dd_api_key_secret_arn
+            valueFrom = var.dd_api_key_secret.arn
           }
         ] : []
         portMappings = [

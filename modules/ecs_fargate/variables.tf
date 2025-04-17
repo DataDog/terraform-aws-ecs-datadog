@@ -13,10 +13,16 @@ variable "dd_api_key" {
   default     = null
 }
 
-variable "dd_api_key_secret_arn" {
+variable "dd_api_key_secret" {
   description = "Datadog API Key Secret ARN"
-  type        = string
-  default     = null
+  type = object({
+    arn = string
+  })
+  default = null
+  validation {
+    condition     = var.dd_api_key_secret == null || try(var.dd_api_key_secret.arn != null, false)
+    error_message = "If 'dd_api_key_secret' is set, 'arn' must be a non-null string."
+  }
 }
 
 variable "dd_registry" {
@@ -265,10 +271,16 @@ variable "ephemeral_storage" {
   default = null
 }
 
-variable "execution_role_arn" {
+variable "execution_role" {
   description = "ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume"
-  type        = string
-  default     = null
+  type = object({
+    arn = string
+  })
+  default = null
+  validation {
+    condition     = var.execution_role == null || try(var.execution_role.arn != null, false)
+    error_message = "If 'execution_role' is set, 'arn' must be a non-null string."
+  }
 }
 
 variable "family" {
@@ -363,10 +375,16 @@ variable "tags" {
   default     = null
 }
 
-variable "task_role_arn" {
+variable "task_role" {
   description = "The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services"
-  type        = string
-  default     = null
+  type = object({
+    arn = string
+  })
+  default = null
+  validation {
+    condition     = var.task_role == null || try(var.task_role.arn != null, false)
+    error_message = "If 'task_role' is set, 'arn' must be a non-null string."
+  }
 }
 
 variable "track_latest" {

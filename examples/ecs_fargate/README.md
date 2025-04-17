@@ -1,6 +1,6 @@
 # ECS Fargate Example
 
-A simple ECS Fargate Task Definition with out of the box Datadog instrumentation.
+This example showcases a simple ECS Fargate Task Definition with out of the box Datadog instrumentation.
 
 ## Usage
 
@@ -15,4 +15,59 @@ A simple ECS Fargate Task Definition with out of the box Datadog instrumentation
 terraform init
 terraform plan
 terraform apply
+```
+
+### Example Module
+
+```hcl
+module "datadog_ecs_fargate_task" {
+  source = "DataDog/ecs-datadog/aws//modules/ecs_fargate"
+
+  # Configure Datadog
+  dd_api_key                       = var.dd_api_key
+  dd_site                          = var.dd_site
+  dd_service                       = var.dd_service
+  dd_tags                          = "team:cont-p, owner:container-monitoring"
+  dd_essential                     = true
+  dd_is_datadog_dependency_enabled = true
+
+  dd_dogstatsd = {
+    enabled                  = true
+    dogstatsd_cardinality    = "high",
+    origin_detection_enabled = true,
+  }
+
+  dd_apm = {
+    enabled = true,
+  }
+
+  dd_log_collection = {
+    enabled = true,
+  }
+
+  # Configure Task Definition
+  family = "datadog-terraform-app"
+  container_definitions = jsonencode([
+    {
+      name      = "datadog-dogstatsd-app",
+      image     = "ghcr.io/datadog/apps-dogstatsd:main",
+      essential = false,
+    },
+    {
+      name      = "datadog-apm-app",
+      image     = "ghcr.io/datadog/apps-tracegen:main",
+      essential = true,
+    },
+  ])
+  volumes = [
+    {
+      name = "app-volume"
+    }
+  ]
+  runtime_platform = {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
+  }
+  requires_compatibilities = ["FARGATE"]
+}
 ```

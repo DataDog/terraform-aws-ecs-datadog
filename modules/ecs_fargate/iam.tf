@@ -12,9 +12,9 @@
 # in order to provide permissions to access the secret
 
 locals {
-  create_dd_secret_perms = var.dd_api_key_secret_arn != null
-  edit_execution_role    = var.execution_role_arn != null && local.create_dd_secret_perms
-  create_execution_role  = var.execution_role_arn == null && local.create_dd_secret_perms
+  create_dd_secret_perms = var.dd_api_key_secret != null
+  edit_execution_role    = var.execution_role != null && local.create_dd_secret_perms
+  create_execution_role  = var.execution_role == null && local.create_dd_secret_perms
 }
 
 # ==============================
@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "dd_secret_access" {
   statement {
     effect    = "Allow"
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = [var.dd_api_key_secret_arn]
+    resources = [var.dd_api_key_secret.arn]
   }
 }
 
@@ -41,7 +41,7 @@ resource "aws_iam_policy" "dd_secret_access" {
 # ==============================
 data "aws_iam_role" "ecs_task_exec_role" {
   count = local.edit_execution_role ? 1 : 0
-  name  = element(split("/", var.execution_role_arn), 1)
+  name  = element(split("/", var.execution_role.arn), 1)
 }
 
 resource "aws_iam_role_policy_attachment" "existing_role_dd_secret" {
@@ -89,8 +89,8 @@ resource "aws_iam_role_policy_attachment" "new_role_dd_secret" {
 # in order to add permissions for the ecs_fargate check
 
 locals {
-  edit_task_role   = var.task_role_arn != null
-  create_task_role = var.task_role_arn == null
+  edit_task_role   = var.task_role != null
+  create_task_role = var.task_role == null
 }
 
 # ==============================
@@ -119,12 +119,12 @@ resource "aws_iam_policy" "dd_ecs_task_permissions" {
 
 data "aws_iam_role" "ecs_task_role" {
   count = local.edit_task_role ? 1 : 0
-  name  = element(split("/", var.task_role_arn), 1)
+  name  = element(split("/", var.task_role.arn), 1)
 }
 
 # Always attach `dd_ecs_task_permissions`
 resource "aws_iam_role_policy_attachment" "existing_role_ecs_task_permissions" {
-  count      = local.edit_execution_role ? 1 : 0
+  count      = local.edit_task_role ? 1 : 0
   role       = data.aws_iam_role.ecs_task_role[0].name
   policy_arn = aws_iam_policy.dd_ecs_task_permissions.arn
 }

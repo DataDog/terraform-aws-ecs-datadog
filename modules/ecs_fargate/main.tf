@@ -31,7 +31,11 @@ resource "aws_ecs_task_definition" "this" {
   enable_fault_injection = var.enable_fault_injection
 
   # Prioritize the user-provided task execution role over the one created by the module
-  execution_role_arn = var.execution_role_arn != null ? var.execution_role_arn : (length(aws_iam_role.new_ecs_task_execution_role) > 0 ? aws_iam_role.new_ecs_task_execution_role[0].arn : null)
+  execution_role_arn = try(
+    var.execution_role.arn,
+    aws_iam_role.new_ecs_task_execution_role[0].arn,
+    null
+  )
 
   family = var.family
 
@@ -83,7 +87,11 @@ resource "aws_ecs_task_definition" "this" {
 
   skip_destroy = var.skip_destroy
   # Prioritize the user-provided task role over the one created by the module
-  task_role_arn = var.task_role_arn != null ? var.task_role_arn : (length(aws_iam_role.new_ecs_task_role) > 0 ? aws_iam_role.new_ecs_task_role[0].arn : null)
+  task_role_arn = try(
+    var.task_role.arn,
+    aws_iam_role.new_ecs_task_role[0].arn,
+    null
+  )
 
   dynamic "volume" {
     for_each = local.modified_volumes
@@ -151,6 +159,8 @@ resource "aws_ecs_task_definition" "this" {
   )
 
   depends_on = [
+    data.aws_iam_role.ecs_task_role,
+    data.aws_iam_role.ecs_task_exec_role,
     aws_iam_role.new_ecs_task_role,
     aws_iam_role.new_ecs_task_execution_role,
   ]
@@ -166,6 +176,11 @@ resource "aws_ecs_task_definition" "this" {
     precondition {
       condition     = var.dd_log_collection.enabled == false || (var.dd_log_collection.enabled == true && local.is_linux == true)
       error_message = "Log collection is not supported on Windows. Please set `dd_log_collection.enabled` to `false`."
+    }
+    # Must provide only one of the two Datadog API key options
+    precondition {
+      condition     = (var.dd_api_key == null && var.dd_api_key_secret != null) || (var.dd_api_key != null && var.dd_api_key_secret == null)
+      error_message = "You must provide only one of the two Datadog API key options: `dd_api_key` or `dd_api_key_secret`."
     }
   }
 }
