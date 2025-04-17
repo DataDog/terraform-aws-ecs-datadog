@@ -152,22 +152,28 @@ locals {
           local.log_router_dependency,
           local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? local.cws_dependency : [],
         )
-        entryPoint = local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? concat(
-          local.cws_entry_point_prefix,
-          lookup(container, "entryPoint", []),
-        ) : null
-        linuxParameters = local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? {
-          # Note: SYS_PTRACE is the only supported capability on Fargate
+      },
+      # Only override the log configuration if the Datadog firelens configuration exists
+      local.dd_firelens_log_configuration != null ? {
+        logConfiguration = local.dd_firelens_log_configuration
+      } : {},
+
+      # Only override CWS related configuration if the configuration is proper
+      local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? {
+        entryPoint = concat(local.cws_entry_point_prefix, lookup(container, "entryPoint", []))
+      } : {},
+
+      local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? {
+        # Note: SYS_PTRACE is the only linux capability available on Fargate
+        linuxParameters = {
           capabilities = {
             add = [
               "SYS_PTRACE",
             ]
             drop = []
           }
-        } : null
-      },
-      # Only override the log configuration if the Datadog firelens configuration exists
-      local.dd_firelens_log_configuration != null ? { logConfiguration = local.dd_firelens_log_configuration } : {}
+        }
+      } : {},
     )
   ]
 
