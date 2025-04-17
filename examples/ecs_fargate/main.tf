@@ -26,6 +26,7 @@ module "datadog_ecs_fargate_task" {
   ]
 
   dd_dogstatsd = {
+    enabled = true
     dogstatsd_cardinality    = "high",
     origin_detection_enabled = true,
   }
@@ -35,10 +36,7 @@ module "datadog_ecs_fargate_task" {
   }
 
   dd_log_collection = {
-    enabled = false,
-    fluentbit_config = {
-      is_log_router_dependency_enabled = true,
-    }
+    enabled = true,
   }
 
   dd_cws = {
@@ -74,7 +72,6 @@ module "datadog_ecs_fargate_task" {
       name = "app-volume"
     }
   ]
-  inference_accelerator = null
   runtime_platform = {
     cpu_architecture        = "ARM64"
     operating_system_family = "LINUX"

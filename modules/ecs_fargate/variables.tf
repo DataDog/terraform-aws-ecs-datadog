@@ -29,24 +29,40 @@ variable "dd_registry" {
   description = "Datadog Agent image registry"
   type        = string
   default     = "public.ecr.aws/datadog/agent"
+  nullable    = false
 }
 
 variable "dd_image_version" {
   description = "Datadog Agent image version"
   type        = string
   default     = "latest"
+  nullable    = false
+}
+
+variable "dd_cpu" {
+  description = "Datadog Agent container CPU units"
+  type        = number
+  default     = null
+}
+
+variable "dd_memory_limit_mib" {
+  description = "Datadog Agent container memory limit in MiB"
+  type        = number
+  default     = null
 }
 
 variable "dd_essential" {
   description = "Whether the Datadog Agent container is essential"
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "dd_is_datadog_dependency_enabled" {
   description = "Whether the Datadog Agent container is a dependency for other containers"
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "dd_health_check" {
@@ -74,9 +90,10 @@ variable "dd_site" {
 }
 
 variable "dd_environment" {
-  description = "Datadog Agent container environment variables. Highest precedence and overwrites other environment variables defined by the module"
+  description = "Datadog Agent container environment variables. Highest precedence and overwrites other environment variables defined by the module. For example, `dd_environment = [ { name = 'DD_VAR', value = 'DD_VAL' } ]`"
   type        = list(map(string))
   default     = [{}]
+  nullable    = false
 }
 
 variable "dd_tags" {
@@ -138,7 +155,7 @@ variable "dd_dogstatsd" {
     error_message = "The Datadog Dogstatsd configuration must be defined."
   }
   validation {
-    condition     = var.dd_dogstatsd.dogstatsd_cardinality == null || can(contains(["low", "orchestrator", "high"], var.dd_dogstatsd.dogstatsd_cardinality))
+    condition     = try(var.dd_dogstatsd.dogstatsd_cardinality == null, false) || can(contains(["low", "orchestrator", "high"], var.dd_dogstatsd.dogstatsd_cardinality))
     error_message = "The Datadog Dogstatsd cardinality must be one of 'low', 'orchestrator', 'high', or null."
   }
 }
@@ -213,15 +230,15 @@ variable "dd_log_collection" {
     error_message = "The Datadog Log Collection configuration must be defined."
   }
   validation {
-    condition     = var.dd_log_collection.enabled == false || (var.dd_log_collection.enabled == true && var.dd_log_collection.fluentbit_config != null)
+    condition     = try(var.dd_log_collection.enabled == false, false) || try(var.dd_log_collection.enabled == true && var.dd_log_collection.fluentbit_config != null, false)
     error_message = "The Datadog Log Collection fluentbit configuration must be defined."
   }
   validation {
-    condition     = var.dd_log_collection.enabled == false || (var.dd_log_collection.enabled == true && var.dd_log_collection.fluentbit_config.log_driver_configuration != null)
+    condition     = try(var.dd_log_collection.enabled == false, false) || try(var.dd_log_collection.enabled == true && var.dd_log_collection.fluentbit_config.log_driver_configuration != null, false)
     error_message = "The Datadog Log Collection log driver configuration must be defined."
   }
   validation {
-    condition     = var.dd_log_collection.enabled == false || (var.dd_log_collection.enabled == true && var.dd_log_collection.fluentbit_config.log_driver_configuration.host_endpoint != null)
+    condition     = try(var.dd_log_collection.enabled == false, false) || try(var.dd_log_collection.enabled == true && var.dd_log_collection.fluentbit_config.log_driver_configuration.host_endpoint != null, false)
     error_message = "The Datadog Log Collection log driver configuration host endpoint must be defined."
   }
 }
@@ -229,7 +246,7 @@ variable "dd_log_collection" {
 variable "dd_cws" {
   description = "Configuration for Datadog Cloud Workload Security (CWS)"
   type = object({
-    enabled          = bool
+    enabled          = optional(bool, false)
     cpu              = optional(number)
     memory_limit_mib = optional(number)
   })
@@ -254,7 +271,11 @@ variable "container_definitions" {
 variable "cpu" {
   description = "Number of cpu units used by the task. If the `requires_compatibilities` is `FARGATE` this field is required"
   type        = number
-  default     = 512
+  default     = 256
+  validation {
+    condition     = var.cpu != null
+    error_message = "Fargate requires that 'cpu' be defined at the task level."
+  }
 }
 
 variable "enable_fault_injection" {
@@ -308,7 +329,11 @@ variable "ipc_mode" {
 variable "memory" {
   description = "Amount (in MiB) of memory used by the task. If the `requires_compatibilities` is `FARGATE` this field is required"
   type        = number
-  default     = 1024
+  default     = 512
+  validation {
+    condition     = var.memory != null
+    error_message = "Fargate requires that 'memory' be defined at the task level."
+  }
 }
 
 # Not Fargate Compatible: must always be "awsvpc"
@@ -316,6 +341,10 @@ variable "network_mode" {
   description = "Docker networking mode to use for the containers in the task. Valid values are `none`, `bridge`, `awsvpc`, and `host`"
   type        = string
   default     = "awsvpc"
+  validation {
+    condition     = var.network_mode == "awsvpc"
+    error_message = "Fargate requires that 'network_mode' be set to 'awsvpc'."
+  }
 }
 
 # Not Fargate Compatible: must always be "task"
@@ -349,6 +378,10 @@ variable "requires_compatibilities" {
   description = "Set of launch types required by the task. The valid values are `EC2` and `FARGATE`"
   type        = list(string)
   default     = ["FARGATE"]
+  validation {
+    condition     = try(contains(var.requires_compatibilities, "FARGATE"), false)
+    error_message = "The `requires_compatibilities` must contain `FARGATE`."
+  }
 }
 
 variable "runtime_platform" {

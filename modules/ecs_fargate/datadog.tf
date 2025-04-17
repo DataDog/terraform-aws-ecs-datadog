@@ -9,7 +9,7 @@ locals {
     dd_ecs_terraform_module = "1.0.0"
   }
 
-  is_linux               = var.runtime_platform == null || var.runtime_platform.operating_system_family == null || var.runtime_platform.operating_system_family == "LINUX"
+  is_linux               = var.runtime_platform == null || try(var.runtime_platform.operating_system_family == null, true) || try(var.runtime_platform.operating_system_family == "LINUX", true)
   is_fluentbit_supported = var.dd_log_collection.enabled && local.is_linux
 
   # Datadog Firelens log configuration
@@ -20,12 +20,14 @@ locals {
         {
           provider    = "ecs"
           Name        = "datadog"
-          Host        = "http-intake.logs.datadoghq.com"
-          TLS         = "on"
+          Host        = var.dd_log_collection.fluentbit_config.log_driver_configuration.host_endpoint
           retry_limit = "2"
         },
+        var.dd_log_collection.fluentbit_config.log_driver_configuration.tls == true ? { TLS = "on" } : {},
         var.dd_log_collection.fluentbit_config.log_driver_configuration.service_name != null ? { dd_service = var.dd_log_collection.fluentbit_config.log_driver_configuration.service_name } : {},
         var.dd_log_collection.fluentbit_config.log_driver_configuration.source_name != null ? { dd_source = var.dd_log_collection.fluentbit_config.log_driver_configuration.source_name } : {},
+        var.dd_log_collection.fluentbit_config.log_driver_configuration.message_key != null ? { dd_message_key = var.dd_log_collection.fluentbit_config.log_driver_configuration.message_key } : {},
+        var.dd_log_collection.fluentbit_config.log_driver_configuration.compress != null ? { compress = var.dd_log_collection.fluentbit_config.log_driver_configuration.compress } : {},
         var.dd_tags != null ? { dd_tags = var.dd_tags } : {},
         var.dd_api_key != null ? { apikey = var.dd_api_key } : {}
       )
@@ -106,14 +108,14 @@ locals {
     ] : [],
   )
 
-  agent_dependency = var.dd_is_datadog_dependency_enabled && var.dd_health_check.command != null ? [
+  agent_dependency = var.dd_is_datadog_dependency_enabled && try(var.dd_health_check.command != null, false) ? [
     {
       containerName = "datadog-agent"
       condition     = "HEALTHY"
     }
   ] : []
 
-  log_router_dependency = var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled && var.dd_log_collection.fluentbit_config.log_router_health_check.command != null && local.dd_firelens_log_configuration != null ? [
+  log_router_dependency = try(var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled, false) && try(var.dd_log_collection.fluentbit_config.log_router_health_check.command != null, false) && local.dd_firelens_log_configuration != null ? [
     {
       containerName = "datadog-log-router"
       condition     = "HEALTHY"
@@ -218,7 +220,7 @@ locals {
     ] : { name = pair.key, value = pair.value } if pair.value != null
   ]
 
-  origin_detection_vars = var.dd_dogstatsd.origin_detection_enabled ? [
+  origin_detection_vars = var.dd_dogstatsd.enabled && var.dd_dogstatsd.origin_detection_enabled ? [
     {
       name  = "DD_DOGSTATSD_ORIGIN_DETECTION"
       value = "true"
@@ -240,13 +242,15 @@ locals {
     }
   ] : []
 
+  dd_environment = var.dd_environment != null ? var.dd_environment : []
+
   dd_agent_env = concat(
     local.base_env,
     local.dynamic_env,
     local.origin_detection_vars,
     local.cws_vars,
     local.ust_env_vars,
-    var.dd_environment,
+    local.dd_environment,
   )
 
   # Datadog Agent container definition
@@ -257,6 +261,8 @@ locals {
         image       = "${var.dd_registry}:${var.dd_image_version}"
         essential   = var.dd_essential
         environment = local.dd_agent_env
+        cpu         = var.dd_cpu
+        memory      = var.dd_memory_limit_mib
         secrets = var.dd_api_key_secret != null ? [
           {
             name      = "DD_API_KEY"
@@ -277,11 +283,11 @@ locals {
         ],
         mountPoints      = local.apm_dsd_mount,
         logConfiguration = local.dd_firelens_log_configuration,
-        dependsOn        = var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
+        dependsOn        = try(var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled, false) && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
         systemControls   = []
         volumesFrom      = []
       },
-      var.dd_health_check.command == null ? {} : {
+      try(var.dd_health_check.command == null, true) ? {} : {
         healthCheck = {
           command     = var.dd_health_check.command
           interval    = var.dd_health_check.interval

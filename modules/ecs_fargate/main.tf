@@ -77,7 +77,7 @@ resource "aws_ecs_task_definition" "this" {
   requires_compatibilities = var.requires_compatibilities
 
   dynamic "runtime_platform" {
-    for_each = length(var.runtime_platform) > 0 ? [var.runtime_platform] : []
+    for_each = var.runtime_platform != null ? [var.runtime_platform] : []
 
     content {
       cpu_architecture        = try(runtime_platform.value.cpu_architecture, null)
