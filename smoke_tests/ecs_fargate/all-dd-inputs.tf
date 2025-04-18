@@ -7,7 +7,7 @@
 # Task Definition: Datadog Agent Example
 ################################################################################
 
-module "datadog_ecs_fargate_task" {
+module "dd_task_all_dd_inputs" {
   source = "../../modules/ecs_fargate"
 
   # Configure Datadog
@@ -29,22 +29,33 @@ module "datadog_ecs_fargate_task" {
     enabled                  = true
     dogstatsd_cardinality    = "high",
     origin_detection_enabled = true,
+    socket_enabled           = false,
   }
 
   dd_apm = {
-    enabled = true,
+    enabled        = true,
+    socket_enabled = true,
   }
 
   dd_log_collection = {
     enabled = true,
+    fluentbit_config = {
+      is_log_router_dependency_enabled = true,
+      log_driver_configuration = {
+        service_name = "dd-test"
+        source_name  = "dd-test"
+        tls          = true
+      }
+    }
   }
 
   dd_cws = {
     enabled = true,
+    cpu     = 100,
   }
 
   # Configure Task Definition
-  family = "datadog-terraform-app"
+  family = "terraform-test-all-dd-inputs"
   container_definitions = jsonencode([
     {
       name      = "datadog-dogstatsd-app",
@@ -72,9 +83,6 @@ module "datadog_ecs_fargate_task" {
       name = "app-volume"
     }
   ]
-  runtime_platform = {
-    cpu_architecture        = "ARM64"
-    operating_system_family = "LINUX"
-  }
+
   requires_compatibilities = ["FARGATE"]
 }

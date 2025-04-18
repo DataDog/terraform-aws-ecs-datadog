@@ -4,62 +4,43 @@
 # Copyright 2025-present Datadog, Inc.
 
 ################################################################################
-# Task Definition: Datadog Agent Example
+# Task Definition: CWS
 ################################################################################
 
-module "datadog_ecs_fargate_task" {
+# Verifies that the Datadog Cloud Workload Security events are being sent to Datadog
+module "dd_cws_only" {
   source = "../../modules/ecs_fargate"
 
-  # Configure Datadog
   dd_api_key                       = var.dd_api_key
   dd_site                          = var.dd_site
   dd_service                       = var.dd_service
   dd_tags                          = "team:cont-p, owner:container-monitoring"
-  dd_essential                     = true
   dd_is_datadog_dependency_enabled = true
 
-  dd_environment = [
-    {
-      name  = "DD_CUSTOM_FEATURE",
-      value = "true",
-    },
-  ]
+  dd_environment = []
 
   dd_dogstatsd = {
-    enabled                  = true
-    dogstatsd_cardinality    = "high",
-    origin_detection_enabled = true,
+    enabled = false
   }
 
   dd_apm = {
-    enabled = true,
+    enabled = false,
   }
 
   dd_log_collection = {
-    enabled = true,
+    enabled = false,
   }
 
   dd_cws = {
     enabled = true,
   }
 
-  # Configure Task Definition
-  family = "datadog-terraform-app"
+  family = "terraform-test-cws-only"
   container_definitions = jsonencode([
-    {
-      name      = "datadog-dogstatsd-app",
-      image     = "ghcr.io/datadog/apps-dogstatsd:main",
-      essential = false,
-    },
-    {
-      name      = "datadog-apm-app",
-      image     = "ghcr.io/datadog/apps-tracegen:main",
-      essential = true,
-    },
     {
       name      = "datadog-cws-app",
       image     = "public.ecr.aws/ubuntu/ubuntu:22.04_stable",
-      essential = false,
+      essential = true,
       entryPoint = [
         "/usr/bin/bash",
         "-c",
@@ -67,11 +48,6 @@ module "datadog_ecs_fargate_task" {
       ],
     }
   ])
-  volumes = [
-    {
-      name = "app-volume"
-    }
-  ]
   runtime_platform = {
     cpu_architecture        = "ARM64"
     operating_system_family = "LINUX"

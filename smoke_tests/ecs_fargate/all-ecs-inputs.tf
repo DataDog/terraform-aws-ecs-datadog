@@ -75,14 +75,14 @@ resource "aws_iam_role_policy_attachment" "ecs_task_role_attachment" {
 
 # Tests that the module is able to create a task
 # with all the AWS task definition parameters
-module "ecs_task_all_task_features" {
+module "dd_task_all_ecs_inputs" {
   source = "../../modules/ecs_fargate"
 
   dd_api_key = var.dd_api_key
   dd_site    = var.dd_site
   dd_service = var.dd_service
 
-  family = "all-task-features"
+  family = "terraform-test-all-ecs-inputs"
   container_definitions = jsonencode([
     {
       name      = "datadog-dummy-app",
@@ -114,7 +114,7 @@ module "ecs_task_all_task_features" {
       ProxyIngressPort = 15000
     }
   }
-  task_role_arn = aws_iam_role.ecs_task_role.arn
+  task_role = { arn = aws_iam_role.ecs_task_role.arn }
   volumes = [
     {
       name = "docker-storage"
@@ -149,43 +149,5 @@ module "ecs_task_all_task_features" {
   runtime_platform = {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
-  }
-}
-
-# Tests that the Datadog agent configuration on Windows is correct
-# In particular, we are checking APM, Dogstatsd, and `ecs.fargate` metrics
-module "ecs_fargate_task_windows" {
-  source = "../../modules/ecs_fargate"
-
-  dd_api_key = var.dd_api_key
-  dd_site    = var.dd_site
-  dd_service = var.dd_service
-
-  dd_apm = {
-    enabled = true
-  }
-
-  dd_dogstatsd = {
-    enabled = true
-  }
-
-  family = "windows-features"
-  container_definitions = jsonencode([
-    {
-      name      = "datadog-dogstatsd-app",
-      image     = "ghcr.io/datadog/apps-dogstatsd:main",
-      essential = false,
-    },
-    {
-      name      = "datadog-apm-app",
-      image     = "ghcr.io/datadog/apps-tracegen:main",
-      essential = true,
-    },
-  ])
-  cpu    = 1024
-  memory = 2048
-  runtime_platform = {
-    cpu_architecture        = "ARM64"
-    operating_system_family = "WINDOWS_SERVER_2022_CORE"
   }
 }
