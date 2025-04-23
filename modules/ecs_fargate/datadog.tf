@@ -3,11 +3,22 @@
 # This product includes software developed at Datadog (https://www.datadoghq.com/).
 # Copyright 2025-present Datadog, Inc.
 
+# Version and Install Info
 locals {
   # Datadog ECS task tags
+  version           = "0.0.0"
+  terraform_version = "1.5.0"
+
+  install_info_tool              = "terraform"
+  install_info_tool_version      = local.version
+  install_info_installer_version = local.terraform_version
+
   tags = {
-    dd_ecs_terraform_module = "1.0.0"
+    dd_ecs_terraform_module = local.version
   }
+}
+
+locals {
 
   is_linux               = var.runtime_platform == null || try(var.runtime_platform.operating_system_family == null, true) || try(var.runtime_platform.operating_system_family == "LINUX", true)
   is_fluentbit_supported = var.dd_log_collection.enabled && local.is_linux
@@ -207,7 +218,19 @@ locals {
     {
       name  = "DD_ECS_TASK_COLLECTION_ENABLED"
       value = "true"
-    }
+    },
+    {
+      name  = "DD_INSTALL_INFO_TOOL"
+      value = local.install_info_tool
+    },
+    {
+      name  = "DD_INSTALL_INFO_TOOL_VERSION"
+      value = local.install_info_tool_version
+    },
+    {
+      name  = "DD_INSTALL_INFO_INSTALLER_VERSION"
+      value = local.install_info_installer_version
+    },
   ]
 
   dynamic_env = [
