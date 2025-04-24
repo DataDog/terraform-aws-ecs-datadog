@@ -7,11 +7,10 @@
 locals {
   # Datadog ECS task tags
   version           = "0.0.0"
-  terraform_version = "1.5.0"
 
   install_info_tool              = "terraform"
-  install_info_tool_version      = local.version
-  install_info_installer_version = local.terraform_version
+  install_info_tool_version      = "terraform-aws-ecs-datadog"
+  install_info_installer_version = local.version
 
   tags = {
     dd_ecs_terraform_module = local.version
