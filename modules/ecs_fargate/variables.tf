@@ -214,7 +214,17 @@ variable "dd_log_collection" {
           host_endpoint = "http-intake.logs.datadoghq.com"
         }
       )
-    }))
+      }),
+      {
+        fluentbit_config = {
+          registry      = "public.ecr.aws/aws-observability/aws-for-fluent-bit"
+          image_version = "stable"
+          log_driver_configuration = {
+            host_endpoint = "http-intake.logs.datadoghq.com"
+          }
+        }
+      }
+    )
   })
   default = {
     enabled = false
