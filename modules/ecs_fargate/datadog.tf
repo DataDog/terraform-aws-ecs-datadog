@@ -338,7 +338,7 @@ locals {
         memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
         user             = "0"
         mountPoints      = []
-        environment      = []
+        environment      = local.ust_env_vars
         portMappings     = []
         systemControls   = []
         volumesFrom      = []
@@ -367,7 +367,7 @@ locals {
       entryPoint       = []
       command          = ["/cws-instrumentation", "setup", "--cws-volume-mount", "/cws-instrumentation-volume"]
       mountPoints      = local.cws_mount
-      environment      = []
+      environment      = local.ust_env_vars
       portMappings     = []
       systemControls   = []
       volumesFrom      = []
