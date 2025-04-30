@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/DataDog/terraform-aws-lambda-datadog/blob/main/LICENSE)
 
-Use this Terraform module to install Datadog monitoring for AWS Elastic Container Service tasks.
+Use this [Terraform module](https://registry.terraform.io/modules/DataDog/ecs-datadog/aws/latest) to install Datadog monitoring for AWS Elastic Container Service tasks.
 
 This Terraform module wraps the [aws_ecs_task_definition](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) resource and automatically configures your task definition for Datadog monitoring.
 
@@ -14,7 +14,8 @@ For more information on the ECS Fargate module, reference the submodule [documen
 
 ```hcl
 module "datadog_ecs_fargate_task" {
-  source = "DataDog/ecs-datadog/aws//modules/ecs_fargate"
+  source  = "DataDog/ecs-datadog/aws//modules/ecs_fargate"
+  version = "1.0.0"
 
   # Datadog Configuration
   dd_api_key_secret = {
