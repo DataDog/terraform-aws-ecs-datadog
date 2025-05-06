@@ -8,7 +8,7 @@
 ################################################################################
 
 # Verifies that the task definition is created with all optional values set to null
-module "dd_all_null" {
+module "dd_task_all_null" {
   source = "../../modules/ecs_fargate"
 
   # Required values

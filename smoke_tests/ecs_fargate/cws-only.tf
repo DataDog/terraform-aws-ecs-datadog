@@ -8,7 +8,7 @@
 ################################################################################
 
 # Verifies that the Datadog Cloud Workload Security events are being sent to Datadog
-module "dd_cws_only" {
+module "dd_task_cws_only" {
   source = "../../modules/ecs_fargate"
 
   dd_api_key                       = var.dd_api_key

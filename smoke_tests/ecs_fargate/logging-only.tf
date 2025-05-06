@@ -7,7 +7,7 @@
 # Task Definition: Logging (from Agent)
 ################################################################################
 
-module "dd_logging_only" {
+module "dd_task_logging_only" {
   source = "../../modules/ecs_fargate"
 
   dd_api_key   = var.dd_api_key
