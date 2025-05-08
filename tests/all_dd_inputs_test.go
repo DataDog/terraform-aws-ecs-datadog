@@ -128,5 +128,5 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 	s.True(found, "Container datadog-dogstatsd-app not found in definitions")
 	s.Equal("ghcr.io/datadog/apps-dogstatsd:main", *dogstatsdAppContainer.Image)
 	AssertEnvVars(s.T(), dogstatsdAppContainer, expectedApmDsdEnvVars)
-	s.Nil(apmAppContainer.LinuxParameters, "LinuxParameters should be nil for datadog-apm-app")
+	s.Nil(dogstatsdAppContainer.LinuxParameters, "LinuxParameters should be nil for datadog-dogstatsd-app")
 }
