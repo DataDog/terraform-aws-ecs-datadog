@@ -22,8 +22,10 @@ module "ecs_fargate_task" {
   version = "1.0.0"
 
   # Datadog Configuration
-  dd_api_key_secret_arn = "arn:aws:secretsmanager:us-east-1:0000000000:secret:example-secret"
-  dd_tags               = "team:cont-p, owner:container-monitoring"
+  dd_api_key_secret = {
+    arn = "arn:aws:secretsmanager:us-east-1:0000000000:secret:example-secret"
+  }
+  dd_tags = "team:cont-p, owner:container-monitoring"
 
   dd_dogstatsd = {
     enabled = true
