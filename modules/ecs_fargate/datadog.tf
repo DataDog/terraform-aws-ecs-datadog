@@ -118,6 +118,15 @@ locals {
     ] : [],
   )
 
+  application_env_vars = concat(
+    var.dd_apm.profiling != null ? [
+      {
+        name  = "DD_PROFILING_ENABLED"
+        value = tostring(var.dd_apm.profiling)
+      }
+    ] : [],
+  )
+
   agent_dependency = var.dd_is_datadog_dependency_enabled && try(var.dd_health_check.command != null, false) ? [
     {
       containerName = "datadog-agent"
@@ -151,6 +160,7 @@ locals {
           local.apm_socket_var,
           local.dsd_port_var,
           local.ust_env_vars,
+          local.application_env_vars,
         ),
         # Append new volume mounts to any existing mountPoints.
         mountPoints = concat(
@@ -238,7 +248,7 @@ locals {
       { key = "DD_SITE", value = var.dd_site },
       { key = "DD_DOGSTATSD_TAG_CARDINALITY", value = var.dd_dogstatsd.dogstatsd_cardinality },
       { key = "DD_TAGS", value = var.dd_tags },
-      { key = "DD_CLUSTER_NAME", value = var.dd_cluster_name }
+      { key = "DD_CLUSTER_NAME", value = var.dd_cluster_name },
     ] : { name = pair.key, value = pair.value } if pair.value != null
   ]
 

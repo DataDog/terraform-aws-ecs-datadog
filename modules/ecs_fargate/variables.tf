@@ -165,10 +165,12 @@ variable "dd_apm" {
   type = object({
     enabled        = optional(bool, true)
     socket_enabled = optional(bool, true)
+    profiling      = optional(bool, false)
   })
   default = {
     enabled        = true
     socket_enabled = true
+    profiling      = false
   }
   validation {
     condition     = var.dd_apm != null
