@@ -23,6 +23,7 @@ func (s *ECSFargateSuite) TestAllECSInputs() {
 	s.Equal("512", task["memory"], "Unexpected memory value")
 	s.Equal("awsvpc", task["network_mode"], "Unexpected network mode")
 	s.Equal("task", task["pid_mode"], "Unexpected PID mode")
+	s.Equal("false", task["track_latest"], "Unexpected track_latest value")
 
 	s.Contains(task["ephemeral_storage"], "size_in_gib:40", "Unexpected ephemeral storage size")
 

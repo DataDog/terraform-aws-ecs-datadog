@@ -158,6 +158,8 @@ resource "aws_ecs_task_definition" "this" {
     local.tags,
   )
 
+  track_latest = var.track_latest
+
   depends_on = [
     data.aws_iam_role.ecs_task_role,
     data.aws_iam_role.ecs_task_exec_role,
@@ -184,3 +186,4 @@ resource "aws_ecs_task_definition" "this" {
     }
   }
 }
+

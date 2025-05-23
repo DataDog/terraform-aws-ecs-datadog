@@ -150,4 +150,5 @@ module "dd_task_all_ecs_inputs" {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
   }
+  track_latest = false
 }
