@@ -32,7 +32,8 @@ module "datadog_ecs_fargate_task" {
   }
 
   dd_apm = {
-    enabled = true,
+    enabled   = true,
+    profiling = true,
   }
 
   dd_log_collection = {
@@ -44,20 +45,20 @@ module "datadog_ecs_fargate_task" {
   }
 
   # Configure Task Definition
-  family = "datadog-terraform-app"
+  family = "dummy-terraform-app"
   container_definitions = jsonencode([
     {
-      name      = "datadog-dogstatsd-app",
+      name      = "dummy-dogstatsd-app",
       image     = "ghcr.io/datadog/apps-dogstatsd:main",
       essential = false,
     },
     {
-      name      = "datadog-apm-app",
+      name      = "dummy-apm-app",
       image     = "ghcr.io/datadog/apps-tracegen:main",
       essential = true,
     },
     {
-      name      = "datadog-cws-app",
+      name      = "dummy-cws-app",
       image     = "public.ecr.aws/ubuntu/ubuntu:22.04_stable",
       essential = false,
       entryPoint = [

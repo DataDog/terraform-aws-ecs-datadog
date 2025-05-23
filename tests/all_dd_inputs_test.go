@@ -115,9 +115,10 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 	s.True(found, "Container datadog-apm-app not found in definitions")
 	s.Equal("ghcr.io/datadog/apps-tracegen:main", *apmAppContainer.Image)
 	expectedApmDsdEnvVars := map[string]string{
-		"DD_SERVICE":         "test-service",
-		"DD_TRACE_AGENT_URL": "unix:///var/run/datadog/apm.socket",
-		"DD_AGENT_HOST":      "127.0.0.1",
+		"DD_SERVICE":           "test-service",
+		"DD_TRACE_AGENT_URL":   "unix:///var/run/datadog/apm.socket",
+		"DD_AGENT_HOST":        "127.0.0.1",
+		"DD_PROFILING_ENABLED": "true",
 	}
 	AssertEnvVars(s.T(), apmAppContainer, expectedApmDsdEnvVars)
 	AssertMountPoint(s.T(), apmAppContainer, MountDdSocket)

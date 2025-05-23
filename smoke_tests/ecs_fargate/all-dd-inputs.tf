@@ -35,6 +35,7 @@ module "dd_task_all_dd_inputs" {
   dd_apm = {
     enabled        = true,
     socket_enabled = true,
+    profiling      = true,
   }
 
   dd_log_collection = {
