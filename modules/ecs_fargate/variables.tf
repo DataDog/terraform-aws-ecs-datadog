@@ -204,6 +204,10 @@ variable "dd_log_collection" {
           timeout      = 5
         }
       )
+      firelens_options = optional(object({
+        config_file_type = optional(string)
+        config_file_value = optional(string)
+      }))
       log_driver_configuration = optional(object({
         host_endpoint = optional(string, "http-intake.logs.datadoghq.com")
         tls           = optional(bool)

@@ -340,9 +340,13 @@ locals {
         essential = var.dd_log_collection.fluentbit_config.is_log_router_essential
         firelensConfiguration = {
           type = "fluentbit"
-          options = {
-            enable-ecs-log-metadata = "true"
-          }
+          options = merge(
+            {
+              enable-ecs-log-metadata = "true"
+            },
+            try(var.dd_log_collection.fluentbit_config.firelens_options.config_file_type != null, false) ? { config-file-type = var.dd_log_collection.fluentbit_config.firelens_options.config_file_type } : {},
+            try(var.dd_log_collection.fluentbit_config.firelens_options.config_file_value != null, false) ? { config-file-value = var.dd_log_collection.fluentbit_config.firelens_options.config_file_value } : {} 
+          )
         }
         cpu              = var.dd_log_collection.fluentbit_config.cpu
         memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
