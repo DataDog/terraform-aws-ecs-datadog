@@ -104,6 +104,10 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 	s.Equal(types.FirelensConfigurationTypeFluentbit, logRouterContainer.FirelensConfiguration.Type, "Log router FireLens type should be fluentbit")
 	s.Equal("true", logRouterContainer.FirelensConfiguration.Options["enable-ecs-log-metadata"],
 		"Log router FireLens should have ECS log metadata enabled")
+	s.Equal("file", logRouterContainer.FirelensConfiguration.Options["config-file-type"],
+		"Log router FireLens should have config_file_type")
+	s.Equal("file:///fluent-bit/etc/fluent-bit.conf", logRouterContainer.FirelensConfiguration.Options["config-file-value"],
+		"Log router FireLens should have config_file_value")
 
 	// Verify no optional containers are present
 	_, found = GetContainer(containers, "cws-instrumentation-init")
