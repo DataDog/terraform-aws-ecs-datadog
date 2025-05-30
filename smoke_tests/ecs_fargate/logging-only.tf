@@ -27,6 +27,10 @@ module "dd_task_logging_only" {
     enabled = true,
     fluentbit_config = {
       is_log_router_dependency_enabled = true,
+      firelens_options = {
+        config_file_type = "file"
+        config_file_value = "file:///fluent-bit/etc/fluent-bit.conf"
+      }
     }
   }
 
