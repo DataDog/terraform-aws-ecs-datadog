@@ -1,0 +1,25 @@
+name: Terraform Format Check
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  terraform-fmt:
+    name: Check Terraform Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2 v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Run terraform fmt check
+        run: terraform fmt -recursive -check -diff .

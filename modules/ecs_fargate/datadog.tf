@@ -12,6 +12,7 @@ locals {
   install_info_tool_version      = "terraform-aws-ecs-datadog"
   install_info_installer_version = local.version
 
+  # AWS Resource Tags
   tags = {
     dd_ecs_terraform_module = local.version
   }
@@ -351,7 +352,7 @@ locals {
               enable-ecs-log-metadata = "true"
             },
             try(var.dd_log_collection.fluentbit_config.firelens_options.config_file_type != null, false) ? { config-file-type = var.dd_log_collection.fluentbit_config.firelens_options.config_file_type } : {},
-            try(var.dd_log_collection.fluentbit_config.firelens_options.config_file_value != null, false) ? { config-file-value = var.dd_log_collection.fluentbit_config.firelens_options.config_file_value } : {} 
+            try(var.dd_log_collection.fluentbit_config.firelens_options.config_file_value != null, false) ? { config-file-value = var.dd_log_collection.fluentbit_config.firelens_options.config_file_value } : {}
           )
         }
         cpu              = var.dd_log_collection.fluentbit_config.cpu

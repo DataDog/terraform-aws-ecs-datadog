@@ -13,3 +13,9 @@ settings:
   required: true
   sensitive: true
   type: true
+sections:
+  hide:
+    # Don't include the version of AWS provider in the docs.
+    # Having the minimum version of the provider in the requirements
+    # is sufficient. This causes issues with generating docs in CI.
+    - providers

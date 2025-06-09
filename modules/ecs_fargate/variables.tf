@@ -207,7 +207,7 @@ variable "dd_log_collection" {
         }
       )
       firelens_options = optional(object({
-        config_file_type = optional(string)
+        config_file_type  = optional(string)
         config_file_value = optional(string)
       }))
       log_driver_configuration = optional(object({
