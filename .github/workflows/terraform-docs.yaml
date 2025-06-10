@@ -47,7 +47,6 @@ jobs:
       - name: Generate docs and check for drift
         working-directory: modules/ecs_fargate
         run: |
-          mkdir -p tmp
           cp README.md /tmp/README.md.bak
           terraform-docs . --config .terraform-docs.yml
           if ! diff README.md /tmp/README.md.bak > /dev/null; then
