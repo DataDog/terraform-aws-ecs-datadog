@@ -32,7 +32,7 @@ resource "aws_efs_access_point" "fs" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "terraform_test_ecs_task_role"
+  name = "terraform-test-ecs-task-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -49,7 +49,7 @@ resource "aws_iam_role" "ecs_task_role" {
 }
 
 resource "aws_iam_policy" "ecs_task_policy" {
-  name        = "terraform_test_ecs_task_policy"
+  name        = "terraform-test-ecs-task-policy"
   description = "Policy for ECS task role to access EFS"
   policy = jsonencode({
     Version = "2012-10-17"
