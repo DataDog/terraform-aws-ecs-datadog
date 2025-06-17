@@ -1,0 +1,9 @@
+stages:
+  - test
+
+tests:
+  stage: test
+  image: registry.ddbuild.io/images/mirror/golang:1.23.4
+  tags: ["arch:amd64"]
+  script:
+    - make test
