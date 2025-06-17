@@ -1,9 +1,21 @@
+image: registry.ddbuild.io/images/mirror/golang:1.23.4
+
 stages:
+  - build
   - test
+
+build:
+  stage: build
+  tags:
+    - "arch:amd64"
+  script:
+    - echo "Building the project..."
+    - echo "Done building the project."
 
 tests:
   stage: test
   image: registry.ddbuild.io/images/mirror/golang:1.23.4
-  tags: ["arch:amd64"]
+  tags:
+    - "arch:amd64"
   script:
     - make test
