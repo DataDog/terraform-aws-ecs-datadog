@@ -18,11 +18,22 @@ tests:
   tags:
     - "arch:amd64"
   before_script:
+    # Setup opentofu (open source Terraform)
     - curl -L https://github.com/opentofu/opentofu/releases/download/v1.9.1/tofu_1.9.1_linux_amd64.tar.gz -o tofu.tar.gz
     - tar -xzf tofu.tar.gz
     - mv tofu /usr/local/bin/tofu
     - chmod +x /usr/local/bin/tofu
     - tofu version
+
+    # Setup AWS CLI
+    - mkdir -p ~/.aws
+    - apt-get update && apt-get install -y unzip curl jq
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    - unzip awscliv2.zip
+    - ./aws/install
+    - aws --version
+
+    # Setup AWS credentials
     - echo "Assuming ddbuild-agent-ci role"
     - roleoutput=$(aws sts assume-role --role-arn arn:aws:iam::669783387624:role/ddbuild-terraform-aws-ecs-datadog --external-id ddbuild-terraform-aws-ecs-datadog-ci --role-session-name RoleSession)
     - export AWS_ACCESS_KEY_ID="$(echo "$roleoutput" | jq -r '.Credentials.AccessKeyId')"
