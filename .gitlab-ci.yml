@@ -17,5 +17,11 @@ tests:
   image: registry.ddbuild.io/images/mirror/golang:1.23.4
   tags:
     - "arch:amd64"
+  before_script:
+    - curl -L https://github.com/opentofu/opentofu/releases/download/v1.9.1/tofu_1.9.1_linux_amd64.tar.gz -o tofu.tar.gz
+    - tar -xzf tofu.tar.gz
+    - mv tofu /usr/local/bin/tofu
+    - chmod +x /usr/local/bin/tofu
+    - tofu version
   script:
     - make test
