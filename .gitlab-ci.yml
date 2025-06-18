@@ -1,16 +1,7 @@
 image: registry.ddbuild.io/images/mirror/golang:1.23.4
 
 stages:
-  - build
   - test
-
-build:
-  stage: build
-  tags:
-    - "arch:amd64"
-  script:
-    - echo "Building the project..."
-    - echo "Done building the project."
 
 tests:
   stage: test
@@ -18,6 +9,9 @@ tests:
   tags:
     - "arch:amd64"
   before_script:
+    - mkdir -p ~/.aws
+    - apt-get update && apt-get install -y unzip curl jq
+
     # Setup opentofu (open source Terraform)
     - curl -L https://github.com/opentofu/opentofu/releases/download/v1.9.1/tofu_1.9.1_linux_amd64.tar.gz -o tofu.tar.gz
     - tar -xzf tofu.tar.gz
@@ -26,15 +20,13 @@ tests:
     - tofu version
 
     # Setup AWS CLI
-    - mkdir -p ~/.aws
-    - apt-get update && apt-get install -y unzip curl jq
     - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    - unzip awscliv2.zip
+    - unzip awscliv2.zip > /dev/null
     - ./aws/install
     - aws --version
 
     # Setup AWS credentials
-    - echo "Assuming ddbuild-agent-ci role"
+    - echo "Assuming ddbuild-terraform-aws-ecs-datadog role"
     - roleoutput=$(aws sts assume-role --role-arn arn:aws:iam::669783387624:role/ddbuild-terraform-aws-ecs-datadog --external-id ddbuild-terraform-aws-ecs-datadog-ci --role-session-name RoleSession)
     - export AWS_ACCESS_KEY_ID="$(echo "$roleoutput" | jq -r '.Credentials.AccessKeyId')"
     - export AWS_SECRET_ACCESS_KEY="$(echo "$roleoutput" | jq -r '.Credentials.SecretAccessKey')"
