@@ -24,7 +24,7 @@ module "dd_task_all_windows" {
     enabled = true
   }
 
-  family = "terraform-test-all-windows"
+  family = "${var.test_prefix}-all-windows"
   container_definitions = jsonencode([
     {
       name      = "datadog-dogstatsd-app",

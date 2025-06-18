@@ -57,7 +57,7 @@ module "dd_task_all_dd_inputs" {
   }
 
   # Configure Task Definition
-  family = "terraform-test-all-dd-inputs"
+  family = "${var.test_prefix}-all-dd-inputs"
   container_definitions = jsonencode([
     {
       name      = "datadog-dogstatsd-app",

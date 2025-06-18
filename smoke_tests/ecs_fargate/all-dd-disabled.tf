@@ -36,7 +36,7 @@ module "dd_task_all_dd_disabled" {
     enabled = false,
   }
 
-  family = "terraform-test-all-dd-disabled"
+  family = "${var.test_prefix}-all-dd-disabled"
   container_definitions = jsonencode([
     {
       name : "dummy-container",

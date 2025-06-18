@@ -28,7 +28,7 @@ module "dd_task_apm_dsd_tcp_udp" {
     socket_enabled = false,
   }
 
-  family = "terraform-test-apm-dsd-tcp-udp"
+  family = "${var.test_prefix}-apm-dsd-tcp-udp"
   container_definitions = jsonencode([
     {
       name      = "datadog-dogstatsd-app",

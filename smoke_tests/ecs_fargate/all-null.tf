@@ -13,7 +13,7 @@ module "dd_task_all_null" {
 
   # Required values
   dd_api_key = var.dd_api_key
-  family     = "terraform-test-all-null"
+  family     = "${var.test_prefix}-all-null"
   container_definitions = jsonencode([
     {
       name : "dummy-container",

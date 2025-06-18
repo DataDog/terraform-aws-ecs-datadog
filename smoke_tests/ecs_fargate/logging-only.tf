@@ -34,7 +34,7 @@ module "dd_task_logging_only" {
     }
   }
 
-  family                = "terraform-test-logging-only"
+  family                = "${var.test_prefix}-logging-only"
   container_definitions = jsonencode([])
 
   requires_compatibilities = ["FARGATE"]

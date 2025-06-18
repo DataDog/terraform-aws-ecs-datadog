@@ -35,7 +35,7 @@ module "dd_task_cws_only" {
     enabled = true,
   }
 
-  family = "terraform-test-cws-only"
+  family = "${var.test_prefix}-cws-only"
   container_definitions = jsonencode([
     {
       name      = "datadog-cws-app",

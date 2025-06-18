@@ -32,7 +32,7 @@ resource "aws_efs_access_point" "fs" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "terraform-test-ecs-task-role"
+  name = "${var.test_prefix}-ecs-task-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -49,7 +49,7 @@ resource "aws_iam_role" "ecs_task_role" {
 }
 
 resource "aws_iam_policy" "ecs_task_policy" {
-  name        = "terraform-test-ecs-task-policy"
+  name        = "${var.test_prefix}-ecs-task-policy"
   description = "Policy for ECS task role to access EFS"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -82,7 +82,7 @@ module "dd_task_all_ecs_inputs" {
   dd_site    = var.dd_site
   dd_service = var.dd_service
 
-  family = "terraform-test-all-ecs-inputs"
+  family = "${var.test_prefix}-all-ecs-inputs"
   container_definitions = jsonencode([
     {
       name      = "datadog-dummy-app",

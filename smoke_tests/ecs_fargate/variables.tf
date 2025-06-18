@@ -19,3 +19,9 @@ variable "dd_site" {
   type        = string
   default     = "datadoghq.com"
 }
+
+variable "test_prefix" {
+  description = "The ECS task family name prefix"
+  type        = string
+  default     = "terraform-test"
+}
