@@ -13,11 +13,18 @@ tests:
     - apt-get update && apt-get install -y unzip curl jq
 
     # Setup opentofu (open source Terraform)
-    - curl -L https://github.com/opentofu/opentofu/releases/download/v1.9.1/tofu_1.9.1_linux_amd64.tar.gz -o tofu.tar.gz
-    - tar -xzf tofu.tar.gz
-    - mv tofu /usr/local/bin/tofu
-    - chmod +x /usr/local/bin/tofu
-    - tofu version
+    # - curl -L https://github.com/opentofu/opentofu/releases/download/v1.9.1/tofu_1.9.1_linux_amd64.tar.gz -o tofu.tar.gz
+    # - tar -xzf tofu.tar.gz
+    # - mv tofu /usr/local/bin/tofu
+    # - chmod +x /usr/local/bin/tofu
+    # - tofu version
+
+    # Setup Terraform
+    - curl -fsSL https://releases.hashicorp.com/terraform/1.6.6/terraform_1.6.6_linux_amd64.zip -o terraform.zip
+    - unzip terraform.zip
+    - mv terraform /usr/local/bin/terraform
+    - chmod +x /usr/local/bin/terraform
+    - terraform version
 
     # Setup AWS CLI
     - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
