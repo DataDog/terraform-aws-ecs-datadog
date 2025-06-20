@@ -8,7 +8,7 @@
 ################################################################################
 
 resource "aws_efs_file_system" "fs" {
-  creation_token = "${var.test_prefix}-efs-file-system"
+  creation_token   = "${var.test_prefix}-efs-file-system"
   performance_mode = "generalPurpose"
   tags = {
     Name = "MyEFSFileSystem"

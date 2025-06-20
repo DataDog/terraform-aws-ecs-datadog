@@ -48,7 +48,9 @@ func (s *ECSFargateSuite) SetupSuite() {
 			"dd_site":     "datadoghq.com",
 			"test_prefix": testPrefix,
 		},
-		NoColor: true,
+		NoColor:            true,
+		MaxRetries:         5,
+		TimeBetweenRetries: 5 * time.Second,
 	}
 
 	// Run terraform init and apply
