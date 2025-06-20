@@ -53,7 +53,7 @@ func (s *ECSFargateSuite) SetupSuite() {
 		},
 		NoColor:            true,
 		MaxRetries:         2,
-		TimeBetweenRetries: 15 * time.Second,
+		TimeBetweenRetries: 10 * time.Second,
 		Lock:               true,
 	}
 
