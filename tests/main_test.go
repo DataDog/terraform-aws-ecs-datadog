@@ -54,6 +54,7 @@ func (s *ECSFargateSuite) SetupSuite() {
 		NoColor:            true,
 		MaxRetries:         6,
 		TimeBetweenRetries: 15 * time.Second,
+		Lock:               true,
 	}
 
 	// Run terraform init and apply
