@@ -48,6 +48,9 @@ func (s *ECSFargateSuite) SetupSuite() {
 			"dd_site":     "datadoghq.com",
 			"test_prefix": testPrefix,
 		},
+		RetryableTerraformErrors: map[string]string{
+			"couldn't find resource": "ECS eventually consistent or task definition not yet propagated",
+		},
 		NoColor:            true,
 		MaxRetries:         5,
 		TimeBetweenRetries: 5 * time.Second,
