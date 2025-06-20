@@ -52,7 +52,7 @@ func (s *ECSFargateSuite) SetupSuite() {
 			"couldn't find resource": "ECS eventually consistent or task definition not yet propagated",
 		},
 		NoColor:            true,
-		MaxRetries:         6,
+		MaxRetries:         2,
 		TimeBetweenRetries: 15 * time.Second,
 		Lock:               true,
 	}
