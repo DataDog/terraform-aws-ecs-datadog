@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/suite"
@@ -52,6 +53,10 @@ func (s *ECSFargateSuite) SetupSuite() {
 
 	// Run terraform init and apply
 	terraform.InitAndApply(s.T(), s.terraformOptions)
+
+	// sleep for a few seconds to ensure resources are ready
+	log.Println("Waiting for resources to be ready...")
+	time.Sleep(10 * time.Second)
 }
 
 // TearDownSuite is run once at the end of the test suite
