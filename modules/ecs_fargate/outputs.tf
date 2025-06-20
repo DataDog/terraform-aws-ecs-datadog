@@ -35,7 +35,8 @@ output "family" {
 
 output "inference_accelerator" {
   description = "Inference accelerator settings."
-  value       = aws_ecs_task_definition.this.inference_accelerator
+  # value       = aws_ecs_task_definition.this.inference_accelerator
+  value = []
 }
 
 output "ipc_mode" {
