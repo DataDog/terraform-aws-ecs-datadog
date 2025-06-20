@@ -52,16 +52,12 @@ func (s *ECSFargateSuite) SetupSuite() {
 			"couldn't find resource": "ECS eventually consistent or task definition not yet propagated",
 		},
 		NoColor:            true,
-		MaxRetries:         5,
-		TimeBetweenRetries: 5 * time.Second,
+		MaxRetries:         6,
+		TimeBetweenRetries: 15 * time.Second,
 	}
 
 	// Run terraform init and apply
 	terraform.InitAndApply(s.T(), s.terraformOptions)
-
-	// sleep for a few seconds to ensure resources are ready
-	log.Println("Waiting for resources to be ready...")
-	time.Sleep(10 * time.Second)
 }
 
 // TearDownSuite is run once at the end of the test suite
