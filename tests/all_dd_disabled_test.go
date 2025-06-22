@@ -20,7 +20,7 @@ func (s *ECSFargateSuite) TestAllDDDisabled() {
 	// Retrieve the task output for the "all-dd-disabled" module
 	var containers []types.ContainerDefinition
 	task := terraform.OutputMap(s.T(), s.terraformOptions, "all-dd-disabled")
-	s.Equal("terraform-test-all-dd-disabled", task["family"], "Unexpected task family name")
+	s.Equal(s.testPrefix+"-all-dd-disabled", task["family"], "Unexpected task family name")
 	s.Equal(string(types.NetworkModeAwsvpc), task["network_mode"], "Unexpected network mode")
 	s.Equal(string(types.PidModeTask), task["pid_mode"], "Unexpected PID mode")
 

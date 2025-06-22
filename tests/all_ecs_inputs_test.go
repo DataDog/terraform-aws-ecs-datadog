@@ -18,7 +18,7 @@ func (s *ECSFargateSuite) TestAllECSInputs() {
 	// Retrieve the task output for the "all-ecs-inputs" module
 	task := terraform.OutputMap(s.T(), s.terraformOptions, "all-ecs-inputs")
 
-	s.Equal("terraform-test-all-ecs-inputs", task["family"], "Unexpected task family name")
+	s.Equal(s.testPrefix+"-all-ecs-inputs", task["family"], "Unexpected task family name")
 	s.Equal("256", task["cpu"], "Unexpected CPU value")
 	s.Equal("512", task["memory"], "Unexpected memory value")
 	s.Equal("awsvpc", task["network_mode"], "Unexpected network mode")

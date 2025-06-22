@@ -20,7 +20,7 @@ func (s *ECSFargateSuite) TestApmDsdTcpUdp() {
 	// Retrieve the task output for the "apm-dsd-tcp-udp" module
 	var containers []types.ContainerDefinition
 	task := terraform.OutputMap(s.T(), s.terraformOptions, "apm-dsd-tcp-udp")
-	s.Equal("terraform-test-apm-dsd-tcp-udp", task["family"], "Unexpected task family name")
+	s.Equal(s.testPrefix+"-apm-dsd-tcp-udp", task["family"], "Unexpected task family name")
 	s.Equal(string(types.NetworkModeAwsvpc), task["network_mode"], "Unexpected network mode")
 	s.Equal(string(types.PidModeTask), task["pid_mode"], "Unexpected PID mode")
 

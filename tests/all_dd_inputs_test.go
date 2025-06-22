@@ -21,6 +21,8 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 	var containers []types.ContainerDefinition
 	task := terraform.OutputMap(s.T(), s.terraformOptions, "all-dd-inputs")
 
+	s.Equal(s.testPrefix+"-all-dd-inputs", task["family"], "Unexpected task family name")
+
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
 	s.Equal(6, len(containers), "Expected 6 containers in the task definition")

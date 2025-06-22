@@ -20,7 +20,7 @@ func (s *ECSFargateSuite) TestAllWindows() {
 	// Retrieve the task output for the "all-windows" module
 	var containers []types.ContainerDefinition
 	task := terraform.OutputMap(s.T(), s.terraformOptions, "all-windows")
-	s.Equal("terraform-test-all-windows", task["family"], "Unexpected task family name")
+	s.Equal(s.testPrefix+"-all-windows", task["family"], "Unexpected task family name")
 	s.Equal(string(types.NetworkModeAwsvpc), task["network_mode"], "Unexpected network mode")
 	s.Equal(string(types.PidModeTask), task["pid_mode"], "Unexpected PID mode")
 

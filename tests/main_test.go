@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/suite"
@@ -19,6 +18,7 @@ import (
 type ECSFargateSuite struct {
 	suite.Suite
 	terraformOptions *terraform.Options
+	testPrefix       string
 }
 
 // TestECSFargateSuite is the entry point for the test suite
@@ -31,10 +31,10 @@ func (s *ECSFargateSuite) SetupSuite() {
 	log.Println("Setting up test suite resources...")
 
 	// All resources must be prefixed with terraform-test
-	testPrefix := "terraform-test"
+	s.testPrefix = "terraform-test"
 	ciJobID := os.Getenv("CI_JOB_ID")
 	if ciJobID != "" {
-		testPrefix = testPrefix + "-" + ciJobID
+		s.testPrefix = s.testPrefix + "-" + ciJobID
 	}
 
 	// Define the Terraform options for the suite
@@ -46,19 +46,20 @@ func (s *ECSFargateSuite) SetupSuite() {
 			"dd_api_key":  "test-api-key",
 			"dd_service":  "test-service",
 			"dd_site":     "datadoghq.com",
-			"test_prefix": testPrefix,
+			"test_prefix": s.testPrefix,
 		},
 		RetryableTerraformErrors: map[string]string{
-			"couldn't find resource": "ECS eventually consistent or task definition not yet propagated",
+			"couldn't find resource": "terratest could not find the resource",
 		},
-		NoColor:            true,
-		MaxRetries:         2,
-		TimeBetweenRetries: 10 * time.Second,
-		Lock:               true,
+		// NoColor:            true,
+		// MaxRetries:         0,
+		// TimeBetweenRetries: 10 * time.Second,
+		// Lock:               true,
 	}
 
 	// Run terraform init and apply
-	terraform.InitAndApply(s.T(), s.terraformOptions)
+	terraform.Init(s.T(), s.terraformOptions)
+	terraform.Apply(s.T(), s.terraformOptions)
 }
 
 // TearDownSuite is run once at the end of the test suite
