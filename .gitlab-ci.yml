@@ -18,14 +18,14 @@ tests:
     - terraform version
 
     # Setup AWS CLI
-    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.27.40.zip" -o "awscliv2.zip"
     - unzip awscliv2.zip > /dev/null
     - ./aws/install
     - aws --version
 
     # Setup AWS credentials
     - echo "Assuming ddbuild-terraform-aws-ecs-datadog role"
-    - roleoutput=$(aws sts assume-role --role-arn arn:aws:iam::669783387624:role/ddbuild-terraform-aws-ecs-datadog --external-id ddbuild-terraform-aws-ecs-datadog-ci --role-session-name RoleSession)
+    - roleoutput=$(aws sts assume-role --role-arn arn:aws:iam::669783387624:role/ddbuild-terraform-aws-ecs-datadog --external-id ddbuild-terraform-aws-ecs-datadog-ci --role-session-name terraform-aws-ecs-datadog-ci)
     - export AWS_ACCESS_KEY_ID="$(echo "$roleoutput" | jq -r '.Credentials.AccessKeyId')"
     - export AWS_SECRET_ACCESS_KEY="$(echo "$roleoutput" | jq -r '.Credentials.SecretAccessKey')"
     - export AWS_SESSION_TOKEN="$(echo "$roleoutput" | jq -r '.Credentials.SessionToken')"
