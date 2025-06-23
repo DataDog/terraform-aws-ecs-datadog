@@ -49,17 +49,12 @@ func (s *ECSFargateSuite) SetupSuite() {
 			"test_prefix": s.testPrefix,
 		},
 		RetryableTerraformErrors: map[string]string{
-			"couldn't find resource": "terratest could not find the resource",
+			"couldn't find resource": "terratest could not find the resource. check for access denied errors in cloudtrial",
 		},
-		// NoColor:            true,
-		// MaxRetries:         0,
-		// TimeBetweenRetries: 10 * time.Second,
-		// Lock:               true,
 	}
 
 	// Run terraform init and apply
-	terraform.Init(s.T(), s.terraformOptions)
-	terraform.Apply(s.T(), s.terraformOptions)
+	terraform.InitAndApply(s.T(), s.terraformOptions)
 }
 
 // TearDownSuite is run once at the end of the test suite
