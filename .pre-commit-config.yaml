@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+        exclude: ^(LICENSE-3rdparty\.csv|NOTICE)
+        stages: [manual, commit]
+      - id: trailing-whitespace
+        exclude: ^(LICENSE-3rdparty\.csv|NOTICE)
+        stages: [manual, commit]
+
+  - repo: local
+    hooks:
+      - id: make-fmt
+        name: Run make fmt to format terraform code
+        entry: make fmt
+        language: system
+        types: [text]
+        stages: [commit]

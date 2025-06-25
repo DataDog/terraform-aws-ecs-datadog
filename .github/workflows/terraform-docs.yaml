@@ -7,7 +7,6 @@ on:
   pull_request:
     paths:
       - "modules/ecs_fargate/**"
-      - ".github/workflows/terraform-docs-check.yaml"
   workflow_dispatch:
 
 jobs:
