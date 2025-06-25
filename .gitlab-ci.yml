@@ -3,25 +3,16 @@ stages:
 
 tests:
   stage: test
-  image: registry.ddbuild.io/images/mirror/golang:1.23.4
+  image: registry.ddbuild.io/ci-containers-project:v50051243-ace27e7-v1.22
   tags:
     - "arch:amd64"
   before_script:
-    - mkdir -p ~/.aws
-    - apt-get update && apt-get install -y unzip curl jq
-
     # Setup Terraform
     - curl -fsSL https://releases.hashicorp.com/terraform/1.6.6/terraform_1.6.6_linux_amd64.zip -o terraform.zip
     - unzip terraform.zip > /dev/null
     - mv terraform /usr/local/bin/terraform
     - chmod +x /usr/local/bin/terraform
     - terraform version
-
-    # Setup AWS CLI
-    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.27.40.zip" -o "awscliv2.zip"
-    - unzip awscliv2.zip > /dev/null
-    - ./aws/install
-    - aws --version
 
     # Setup AWS credentials
     - echo "Assuming ddbuild-terraform-aws-ecs-datadog role"
