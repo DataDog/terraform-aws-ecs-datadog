@@ -22,7 +22,6 @@ terraform apply
 ```hcl
 module "datadog_ecs_fargate_task" {
   source  = "DataDog/ecs-datadog/aws//modules/ecs_fargate"
-  version = "1.0.0"
 
   # Configure Datadog
   dd_api_key                       = var.dd_api_key

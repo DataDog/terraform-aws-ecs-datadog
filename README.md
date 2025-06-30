@@ -18,7 +18,6 @@ For more information on the ECS Fargate module, reference the submodule [documen
 ```hcl
 module "datadog_ecs_fargate_task" {
   source  = "DataDog/ecs-datadog/aws//modules/ecs_fargate"
-  version = "1.0.0"
 
   # Datadog Configuration
   dd_api_key_secret = {

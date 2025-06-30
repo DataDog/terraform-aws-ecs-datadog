@@ -19,7 +19,6 @@ This Terraform module wraps the [aws_ecs_task_definition](https://registry.terra
 ```hcl
 module "ecs_fargate_task" {
   source  = "DataDog/ecs-datadog/aws//modules/ecs_fargate"
-  version = "1.0.0"
 
   # Datadog Configuration
   dd_api_key_secret = {
@@ -122,7 +121,6 @@ resource "aws_ecs_task_definition" "example" {
 ```hcl
 resource "datadog_ecs_fargate_task" "example" {
   source  = "DataDog/ecs-datadog/aws//modules/ecs_fargate"
-  version = "1.0.0"
 
   dd_api_key = "XXXXXXXXXXX"
 
