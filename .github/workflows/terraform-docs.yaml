@@ -47,7 +47,7 @@ jobs:
         working-directory: modules/ecs_fargate
         run: |
           cp README.md /tmp/README.md.bak
-          terraform-docs . --config .terraform-docs.yml
+          terraform-docs . --config ../../.terraform-docs.yml
           if ! diff README.md /tmp/README.md.bak > /dev/null; then
             echo "::error::Documentation is out of date. Please run 'make docs' in modules/ecs_fargate and commit the changes."
             echo "Diff:"
