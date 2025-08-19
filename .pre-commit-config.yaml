@@ -17,3 +17,12 @@ repos:
         language: system
         types: [text]
         stages: [commit]
+
+  - repo: local
+    hooks:
+      - id: make-docs
+        name: Run make docs to generate documentation
+        entry: make docs
+        language: system
+        types: [text]
+        stages: [commit]
