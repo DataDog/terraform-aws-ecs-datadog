@@ -161,8 +161,6 @@ resource "aws_ecs_task_definition" "this" {
   track_latest = var.track_latest
 
   depends_on = [
-    data.aws_iam_role.ecs_task_role,
-    data.aws_iam_role.ecs_task_exec_role,
     aws_iam_role.new_ecs_task_role,
     aws_iam_role.new_ecs_task_execution_role,
   ]
