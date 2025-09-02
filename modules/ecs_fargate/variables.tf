@@ -313,12 +313,17 @@ variable "ephemeral_storage" {
 variable "execution_role" {
   description = "ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume"
   type = object({
-    arn = string
+    arn  = string
+    name = string
   })
   default = null
   validation {
     condition     = var.execution_role == null || try(var.execution_role.arn != null, false)
     error_message = "If 'execution_role' is set, 'arn' must be a non-null string."
+  }
+  validation {
+    condition     = var.execution_role == null || try(var.execution_role.name != null, false)
+    error_message = "If 'execution_role' is set, 'name' must be a non-null string."
   }
 }
 
@@ -429,12 +434,17 @@ variable "tags" {
 variable "task_role" {
   description = "The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services"
   type = object({
-    arn = string
+    arn  = string
+    name = string
   })
   default = null
   validation {
     condition     = var.task_role == null || try(var.task_role.arn != null, false)
     error_message = "If 'task_role' is set, 'arn' must be a non-null string."
+  }
+  validation {
+    condition     = var.task_role == null || try(var.task_role.name != null, false)
+    error_message = "If 'task_role' is set, 'name' must be a non-null string."
   }
 }
 

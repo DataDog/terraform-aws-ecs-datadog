@@ -160,11 +160,17 @@ resource "datadog_ecs_fargate_task" "example" {
     operating_system_family = "LINUX"
   }
 
-  # Instead of supplying the `task_role_arn` directly,
-  # provide it into the `arn` field of the `task_role` object.
+  # Instead of supplying the `task_role_arn` directly, provide the
+  # `arn` and `name` fields of the `task_role` object.
   task_role = {
-    arn = "arn:aws:iam::123456789012:role/my-example-role"
+    arn = "arn:aws:iam::123456789012:role/my-path/my-example-role"
+    name = "my-example-role"
   }
+  
+  # Alternatively, if the role is created in the same Terraform stack,
+  # provide the entire `aws_iam_role` block as the variable value.
+  # The `aws_iam_role` output meets the `arn` and `name` requirements.
+  execution_role = aws_iam_role.example_ecs_exec_role
 }
 ```
 

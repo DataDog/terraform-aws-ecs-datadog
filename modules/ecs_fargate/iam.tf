@@ -39,14 +39,9 @@ resource "aws_iam_policy" "dd_secret_access" {
 # ==============================
 # Case 1: User provides existing Task Execution Role
 # ==============================
-data "aws_iam_role" "ecs_task_exec_role" {
-  count = local.edit_execution_role ? 1 : 0
-  name  = element(split("/", var.execution_role.arn), 1)
-}
-
 resource "aws_iam_role_policy_attachment" "existing_role_dd_secret" {
   count      = local.edit_execution_role ? 1 : 0
-  role       = data.aws_iam_role.ecs_task_exec_role[0].name
+  role       = var.execution_role.name
   policy_arn = aws_iam_policy.dd_secret_access[0].arn
 }
 
@@ -117,15 +112,10 @@ resource "aws_iam_policy" "dd_ecs_task_permissions" {
 # Case 1: User provides existing Task Role
 # ==============================
 
-data "aws_iam_role" "ecs_task_role" {
-  count = local.edit_task_role ? 1 : 0
-  name  = element(split("/", var.task_role.arn), 1)
-}
-
 # Always attach `dd_ecs_task_permissions`
 resource "aws_iam_role_policy_attachment" "existing_role_ecs_task_permissions" {
   count      = local.edit_task_role ? 1 : 0
-  role       = data.aws_iam_role.ecs_task_role[0].name
+  role       = var.task_role.name
   policy_arn = aws_iam_policy.dd_ecs_task_permissions.arn
 }
 
