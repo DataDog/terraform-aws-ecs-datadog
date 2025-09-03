@@ -31,6 +31,12 @@ module "dd_task_logging_only" {
         config_file_type  = "file"
         config_file_value = "file:///fluent-bit/etc/fluent-bit.conf"
       }
+      environment = [
+        {
+          name  = "DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL"
+          value = "true"
+        }
+      ]
     }
   }
 
