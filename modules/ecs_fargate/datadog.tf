@@ -338,6 +338,11 @@ locals {
     )
   ]
 
+  dd_log_agent_env = concat(
+    local.ust_env_vars,
+    var.dd_log_collection.fluentbit_config.environment
+  )
+
   # Datadog log router container definition
   dd_log_container = local.is_fluentbit_supported ? [
     merge(
@@ -359,7 +364,7 @@ locals {
         memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
         user             = "0"
         mountPoints      = []
-        environment      = local.ust_env_vars
+        environment      = local.dd_log_agent_env
         portMappings     = []
         systemControls   = []
         volumesFrom      = []
