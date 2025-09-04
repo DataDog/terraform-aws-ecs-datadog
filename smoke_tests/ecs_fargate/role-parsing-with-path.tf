@@ -12,7 +12,7 @@
 # Create IAM roles with paths to test the parsing logic
 resource "aws_iam_role" "test_task_role_with_path" {
   name = "${var.test_prefix}-task-role-with-path"
-  path = "/test-path/"
+  path = "/test-task-path/"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

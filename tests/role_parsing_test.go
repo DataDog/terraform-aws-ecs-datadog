@@ -31,7 +31,7 @@ func (s *ECSFargateSuite) TestRoleParsingWithPath() {
 
 	taskRoleArn := task["task_role_arn"]
 	s.NotEmpty(taskRoleArn, "Task role ARN should not be empty")
-	s.Contains(taskRoleArn, "/test-path/", "Task role ARN should contain the path '/test-path/'")
+	s.Contains(taskRoleArn, "/test-task-path/", "Task role ARN should contain the path '/test-path/'")
 	s.Contains(taskRoleArn, s.testPrefix+"-task-role-with-path", "Task role ARN should contain the expected role name")
 
 	executionRoleArn := task["execution_role_arn"]
