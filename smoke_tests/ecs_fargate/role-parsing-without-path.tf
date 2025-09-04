@@ -4,9 +4,7 @@
 # Copyright 2025-present Datadog, Inc.
 
 ################################################################################
-# Test: Role ARN parsing without path
-# This test verifies that the module correctly parses role names from ARNs
-# that do NOT include paths (e.g., role-name directly)
+# Task Definition: IAM Role without path in name
 ################################################################################
 
 # Create IAM roles without paths to test the parsing logic
