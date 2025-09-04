@@ -61,7 +61,7 @@ module "dd_task_role_parsing_with_path" {
   dd_essential = true
 
   # Configure Task Definition
-  family = "${var.test_prefix}-role-parsing-with-path"
+  family                = "${var.test_prefix}-role-parsing-with-path"
   container_definitions = jsonencode([])
 
   requires_compatibilities = ["FARGATE"]
