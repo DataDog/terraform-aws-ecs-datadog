@@ -53,7 +53,7 @@ module "dd_task_role_parsing_with_path" {
 
   # Use roles with paths to test parsing
   task_role      = aws_iam_role.test_task_role_with_path
-  execution_role = aws_iam_role.test_execution_role_with_path
+  execution_role = { arn = aws_iam_role.test_execution_role_with_path.arn }
 
   dd_api_key   = var.dd_api_key
   dd_site      = var.dd_site
@@ -62,13 +62,7 @@ module "dd_task_role_parsing_with_path" {
 
   # Configure Task Definition
   family = "${var.test_prefix}-role-parsing-with-path"
-  container_definitions = jsonencode([
-    {
-      name      = "test-app",
-      image     = "nginx:latest",
-      essential = true,
-    }
-  ])
+  container_definitions = jsonencode([])
 
   requires_compatibilities = ["FARGATE"]
 }
