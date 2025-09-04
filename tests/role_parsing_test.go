@@ -31,12 +31,12 @@ func (s *ECSFargateSuite) TestRoleParsingWithPath() {
 
 	taskRoleArn := task["task_role_arn"]
 	s.NotEmpty(taskRoleArn, "Task role ARN should not be empty")
-	s.Contains(taskRoleArn, "/test-task-path/", "Task role ARN should contain the path '/test-path/'")
+	s.Contains(taskRoleArn, "/terraform-test/", "Task role ARN should contain the path '/test-path/'")
 	s.Contains(taskRoleArn, s.testPrefix+"-task-role-with-path", "Task role ARN should contain the expected role name")
 
 	executionRoleArn := task["execution_role_arn"]
 	s.NotEmpty(executionRoleArn, "Execution role ARN should not be empty")
-	s.Contains(executionRoleArn, "/test-execution-path/", "Execution role ARN should contain the path '/test-execution-path/'")
+	s.Contains(executionRoleArn, "/terraform-test/", "Execution role ARN should contain the path '/terraform-test/'")
 	s.Contains(executionRoleArn, s.testPrefix+"-execution-role-with-path", "Execution role ARN should contain the expected role name")
 }
 

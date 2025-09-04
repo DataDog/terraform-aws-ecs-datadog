@@ -12,7 +12,7 @@
 # Create IAM roles with paths to test the parsing logic
 resource "aws_iam_role" "test_task_role_with_path" {
   name = "${var.test_prefix}-task-role-with-path"
-  path = "/test-task-path/"
+  path = "/terraform-test/"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -28,7 +28,7 @@ resource "aws_iam_role" "test_task_role_with_path" {
 
 resource "aws_iam_role" "test_execution_role_with_path" {
   name = "${var.test_prefix}-execution-role-with-path"
-  path = "/test-execution-path/"
+  path = "/terraform-test/"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
