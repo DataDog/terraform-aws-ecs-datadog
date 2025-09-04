@@ -45,7 +45,7 @@ module "datadog_ecs_fargate_task" {
   }
 
   # Configure Task Definition
-  family = "dummy-terraform-app"
+  family = var.task_family_name
   container_definitions = jsonencode([
     {
       name      = "dummy-dogstatsd-app",

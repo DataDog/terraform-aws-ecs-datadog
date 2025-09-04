@@ -26,3 +26,9 @@ variable "dd_site" {
   type        = string
   default     = "datadoghq.com"
 }
+
+variable "task_family_name" {
+  description = "The ECS task family name"
+  type        = string
+  default     = "dummy-terraform-app"
+}

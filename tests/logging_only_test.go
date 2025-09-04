@@ -87,7 +87,8 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 
 	// Verify log router environment variables
 	expectedLogRouterEnvVars := map[string]string{
-		"DD_SERVICE": "test-service",
+		"DD_SERVICE":                           "test-service",
+		"DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL": "true",
 	}
 	AssertEnvVars(s.T(), logRouterContainer, expectedLogRouterEnvVars)
 

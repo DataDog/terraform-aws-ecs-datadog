@@ -45,3 +45,6 @@ target
 bin
 obj
 .DS_Store
+
+# Jetbrains
+.idea
