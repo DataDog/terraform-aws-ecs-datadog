@@ -338,9 +338,11 @@ locals {
     )
   ]
 
+  dd_log_environment = var.dd_log_collection.fluentbit_config.environment != null ? var.dd_log_collection.fluentbit_config.environment : []
+
   dd_log_agent_env = concat(
     local.ust_env_vars,
-    var.dd_log_collection.fluentbit_config.environment
+    local.dd_log_environment
   )
 
   # Datadog log router container definition

@@ -9,7 +9,7 @@ This example showcases a simple ECS Fargate Task Definition with out of the box 
   * Set the `dd_api_key` to the Datadog API Key (required)
   * Set the `dd_service` to the name of the service you want to use to filter for the resource in Datadog
   * Set the `dd_site` to the [Datadog destination site](https://docs.datadoghq.com/getting_started/site/) for your metrics, traces, and logs
-  * (Optional) Set `task_family_name` to the name of the task family (default: "datadog-terraform-app")
+  * (Optional) Set `task_family_name` to the name of the task family (default: "dummy-terraform-app")
 * Run the following commands:
 
 ```bash
