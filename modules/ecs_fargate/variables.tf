@@ -191,7 +191,10 @@ variable "dd_log_collection" {
       memory_limit_mib                 = optional(number)
       is_log_router_essential          = optional(bool, false)
       is_log_router_dependency_enabled = optional(bool, false)
-      environment                      = optional(list(map(string)), [{}])
+      environment = optional(list(object({
+        name  = string
+        value = string
+      })), [])
       log_router_health_check = optional(object({
         command      = optional(list(string))
         interval     = optional(number)
@@ -223,6 +226,15 @@ variable "dd_log_collection" {
           host_endpoint = "http-intake.logs.datadoghq.com"
         }
       )
+      mountPoints = optional(list(object({
+        sourceVolume : string,
+        containerPath : string,
+        readOnly : bool
+      })), [])
+      dependsOn = optional(list(object({
+        containerName : string,
+        condition : string
+      })), [])
       }),
       {
         fluentbit_config = {
