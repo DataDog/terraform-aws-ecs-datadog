@@ -365,11 +365,12 @@ locals {
         cpu              = var.dd_log_collection.fluentbit_config.cpu
         memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
         user             = "0"
-        mountPoints      = []
+        mountPoints      = var.dd_log_collection.fluentbit_config.mountPoints
         environment      = local.dd_log_agent_env
         portMappings     = []
         systemControls   = []
         volumesFrom      = []
+        dependsOn        = var.dd_log_collection.fluentbit_config.dependsOn
       },
       var.dd_log_collection.fluentbit_config.log_router_health_check.command == null ? {} : {
         healthCheck = {
