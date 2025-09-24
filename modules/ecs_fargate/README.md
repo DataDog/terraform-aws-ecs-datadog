@@ -199,6 +199,10 @@ The default Datadog site is `datadoghq.com`. To use a different site set the `DD
 
 All of the input variables prefixed with `dd` are related to Datadog configuration. In order to further customize the Datadog agent configuration beyond the provided interface in this module, you can use the `dd_environment_variables` input argument to customize the Agent configuration. **Note** that `dd_environment_variables` overwrites any other environment variables with the same keys defined. For more information on Datadog configuration, reference [Amazon ECS on AWS Fargate](https://docs.datadoghq.com/integrations/ecs_fargate/?tab=webui) Datadog documentation.
 
+### Miscellaneous
+
+To support Process monitoring with the Datadog Agent, the Fargate task must run with `pid_mode` set to `task`. This configuration, however, results in a bug limiting `exec` access onto only one container in the task. For more information, see the [related github issue](https://github.com/aws/containers-roadmap/issues/2268). If you require exec access, you can explicitly set the `pid_mode` to `null`.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
