@@ -183,8 +183,9 @@ locals {
         ),
         # Merge UST docker labels with any existing docker labels.
         dockerLabels = merge(
-          lookup(container, "dockerLabels", {}),
           local.ust_docker_labels,
+          // Placing this after local.ust_docker_labels ensures user defined UST labels are not overwritten.
+          lookup(container, "dockerLabels", {}),
         ),
         # Append new volume mounts to any existing mountPoints.
         mountPoints = concat(
@@ -367,10 +368,9 @@ locals {
   dd_log_container = local.is_fluentbit_supported ? [
     merge(
       {
-        name         = "datadog-log-router"
-        image        = "${var.dd_log_collection.fluentbit_config.registry}:${var.dd_log_collection.fluentbit_config.image_version}"
-        essential    = var.dd_log_collection.fluentbit_config.is_log_router_essential
-        dockerLabels = local.ust_docker_labels
+        name      = "datadog-log-router"
+        image     = "${var.dd_log_collection.fluentbit_config.registry}:${var.dd_log_collection.fluentbit_config.image_version}"
+        essential = var.dd_log_collection.fluentbit_config.is_log_router_essential
         firelensConfiguration = {
           type = "fluentbit"
           options = merge(
@@ -386,6 +386,7 @@ locals {
         user             = "0"
         mountPoints      = var.dd_log_collection.fluentbit_config.mountPoints
         environment      = local.dd_log_agent_env
+        dockerLabels     = local.ust_docker_labels
         portMappings     = []
         systemControls   = []
         volumesFrom      = []

@@ -37,3 +37,7 @@ output "role-parsing-with-path" {
 output "role-parsing-without-path" {
   value = module.dd_task_role_parsing_without_path
 }
+
+output "ust-docker-labels" {
+  value = module.dd_task_ust_docker_labels
+}
