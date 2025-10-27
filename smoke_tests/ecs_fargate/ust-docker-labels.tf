@@ -29,6 +29,10 @@ module "dd_task_ust_docker_labels" {
     enabled = true,
   }
 
+  dd_docker_labels = {
+    "com.datadoghq.tags.service" : "docker-agent-service",
+  }
+
   # Configure Task Definition with multiple containers
   family = "${var.test_prefix}-ust-docker-labels"
   container_definitions = jsonencode([
@@ -42,7 +46,7 @@ module "dd_task_ust_docker_labels" {
       image     = "nginx:latest",
       essential = false,
       dockerLabels = {
-        "com.datadoghq.tags.service" : "different_name",
+        "com.datadoghq.tags.service" : "overwritten_name",
         "custom.label" = "custom-value"
       }
     }

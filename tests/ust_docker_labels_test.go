@@ -38,7 +38,10 @@ func (s *ECSFargateSuite) TestUSTDockerLabels() {
 	s.True(found, "Container dummy-app not found in definitions")
 	AssertDockerLabels(s.T(), dummyApp, expectedUSTLabels)
 
+	// Expect UST docker labels to be present on all Datadog containers with
+	// overwritten labels when UST docker labels are specified.
 	datadogContainers := []string{"datadog-agent", "datadog-log-router", "cws-instrumentation-init"}
+	expectedUSTLabels["com.datadoghq.tags.service"] = "docker-agent-service"
 	for _, containerName := range datadogContainers {
 		container, found := GetContainer(containers, containerName)
 		s.True(found, "Container %s not found in definitions", containerName)

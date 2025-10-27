@@ -310,6 +310,11 @@ locals {
     local.dd_environment,
   )
 
+  dd_agent_docker_labels = merge(
+    local.ust_docker_labels,
+    var.dd_docker_labels,
+  )
+
   # Datadog Agent container definition
   dd_agent_container = [
     merge(
@@ -318,7 +323,7 @@ locals {
         image        = "${var.dd_registry}:${var.dd_image_version}"
         essential    = var.dd_essential
         environment  = local.dd_agent_env
-        dockerLabels = local.ust_docker_labels
+        dockerLabels = local.dd_agent_docker_labels
         cpu          = var.dd_cpu
         memory       = var.dd_memory_limit_mib
         secrets = var.dd_api_key_secret != null ? [
@@ -386,7 +391,7 @@ locals {
         user             = "0"
         mountPoints      = var.dd_log_collection.fluentbit_config.mountPoints
         environment      = local.dd_log_agent_env
-        dockerLabels     = local.ust_docker_labels
+        dockerLabels     = local.dd_agent_docker_labels
         portMappings     = []
         systemControls   = []
         volumesFrom      = []
@@ -417,7 +422,7 @@ locals {
       command          = ["/cws-instrumentation", "setup", "--cws-volume-mount", "/cws-instrumentation-volume"]
       mountPoints      = local.cws_mount
       environment      = local.ust_env_vars
-      dockerLabels     = local.ust_docker_labels
+      dockerLabels     = local.dd_agent_docker_labels
       portMappings     = []
       systemControls   = []
       volumesFrom      = []
