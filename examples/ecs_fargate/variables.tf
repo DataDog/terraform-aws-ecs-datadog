@@ -16,7 +16,19 @@ variable "dd_api_key_secret_arn" {
 }
 
 variable "dd_service" {
-  description = "Service name for resource filtering in Datadog"
+  description = "The service name for resource filtering and UST tagging in Datadog"
+  type        = string
+  default     = null
+}
+
+variable "dd_env" {
+  description = "The environment for resource filtering and UST tagging in Datadog"
+  type        = string
+  default     = null
+}
+
+variable "dd_version" {
+  description = "The version for resource filtering and UST tagging in Datadog"
   type        = string
   default     = null
 }

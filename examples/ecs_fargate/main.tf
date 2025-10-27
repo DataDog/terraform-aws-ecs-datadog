@@ -17,9 +17,9 @@ module "datadog_ecs_fargate_task" {
   dd_essential                     = true
   dd_is_datadog_dependency_enabled = true
 
-  dd_service = "test-service"
-  dd_env     = "test"
-  dd_version = "1.2.3"
+  dd_service = var.dd_service
+  dd_env     = var.dd_env
+  dd_version = var.dd_version
 
   dd_environment = [
     {
