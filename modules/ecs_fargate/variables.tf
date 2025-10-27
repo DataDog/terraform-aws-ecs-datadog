@@ -98,7 +98,7 @@ variable "dd_environment" {
 
 variable "dd_docker_labels" {
   description = "Datadog Agent container docker labels"
-  type        = map(map(string))
+  type        = map(string)
   default     = {}
 }
 
