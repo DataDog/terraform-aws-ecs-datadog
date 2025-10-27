@@ -48,9 +48,11 @@ func (s *ECSFargateSuite) TestUSTDockerLabels() {
 		AssertDockerLabels(s.T(), container, expectedUSTLabels)
 	}
 
+	// Expect UST docker labels to be overwritten on application container if docker labels
+	// are specified in the container definition.
 	overwrittenLabels, found := GetContainer(containers, "app-overwritten-ust")
 	s.True(found, "Container app-overwritten-ust not found in definitions")
-	expectedUSTLabels["com.datadoghq.tags.service"] = "different_name"
+	expectedUSTLabels["com.datadoghq.tags.service"] = "overwritten_name"
 	AssertDockerLabels(s.T(), overwrittenLabels, expectedUSTLabels)
 
 }
