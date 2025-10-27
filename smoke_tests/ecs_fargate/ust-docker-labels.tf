@@ -11,13 +11,14 @@ module "dd_task_ust_docker_labels" {
   source = "../../modules/ecs_fargate"
 
   # Configure Datadog with UST tags
-  dd_api_key  = var.dd_api_key
-  dd_site     = var.dd_site
-  dd_service  = "ust-test-service"
-  dd_env      = "ust-test-env"
-  dd_version  = "1.2.3"
-  dd_tags     = "team:test"
+  dd_api_key   = var.dd_api_key
+  dd_site      = var.dd_site
+  dd_service   = "ust-test-service"
+  dd_env       = "ust-test-env"
+  dd_version   = "1.2.3"
+  dd_tags      = "team:test"
   dd_essential = true
+
   dd_is_datadog_dependency_enabled = true
 
   dd_log_collection = {
@@ -41,7 +42,7 @@ module "dd_task_ust_docker_labels" {
       image     = "nginx:latest",
       essential = false,
       dockerLabels = {
-        "com.datadoghq.tags.service": "different_name",
+        "com.datadoghq.tags.service" : "different_name",
         "custom.label" = "custom-value"
       }
     }
