@@ -77,6 +77,32 @@ locals {
     }
   ] : []
 
+  dd_agent_mount = concat(
+    local.apm_dsd_mount,
+    [
+      {
+        containerPath = "/etc/datadog-agent"
+        sourceVolume  = "agent-config"
+        readOnly      = false
+      },
+      {
+        containerPath = "/tmp"
+        sourceVolume  = "agent-tmp"
+        readOnly      = false
+      },
+      {
+        containerPath = "/var/log/datadog"
+        sourceVolume  = "agent-logs"
+        readOnly      = false
+      },
+      {
+        containerPath = "/opt/datadog-agent/run"
+        sourceVolume  = "agent-run"
+        readOnly      = false
+      }
+    ]
+  )
+
   apm_socket_var = local.is_apm_socket_mount ? [
     {
       name  = "DD_TRACE_AGENT_URL"
@@ -223,6 +249,21 @@ locals {
     )
   ]
 
+  rofs_volumes = [
+    {
+      name = "agent-config"
+    },
+    {
+      name = "agent-tmp"
+    },
+    {
+      name = "agent-logs"
+    },
+    {
+      name = "agent-run"
+    }
+  ]
+
   # Volume configuration for task
   apm_dsd_volume = local.is_apm_dsd_volume ? [
     {
@@ -238,6 +279,7 @@ locals {
 
   modified_volumes = concat(
     [for k, v in coalesce(var.volumes, []) : v],
+    local.rofs_volumes,
     local.apm_dsd_volume,
     local.cws_volume,
   )
@@ -310,6 +352,44 @@ locals {
 
   # Datadog Agent container definition
   dd_agent_container = [
+    {
+      cpu                    = 0
+      memory                 = 128
+      name                   = "init-volume"
+      image                  = "${var.dd_registry}:${var.dd_image_version}"
+      essential              = false
+      readOnlyRootFilesystem = true
+      command                = ["/bin/sh", "-c", "cp -vnR /etc/datadog-agent/* /agent-config/ && exit 0"]
+      mountPoints = [
+        {
+          sourceVolume  = "agent-config"
+          containerPath = "/agent-config"
+          readOnly      = false
+        }
+      ]
+    },
+    {
+      cpu                    = 0
+      memory                 = 128
+      name                   = "init-config"
+      image                  = "${var.dd_registry}:${var.dd_image_version}"
+      essential              = false
+      readOnlyRootFilesystem = true
+      command                = ["/bin/sh", "-c", "for script in $(find /etc/cont-init.d/ -type f -name '*.sh' | sort) ; do bash $script ; done"]
+      dependsOn = [
+        {
+          condition     = "SUCCESS"
+          containerName = "init-volume"
+        }
+      ]
+      mountPoints = [
+        {
+          sourceVolume  = "agent-config"
+          containerPath = "/etc/datadog-agent"
+          readOnly      = false
+        }
+      ]
+    },
     merge(
       {
         name         = "datadog-agent"
@@ -319,6 +399,8 @@ locals {
         dockerLabels = var.dd_docker_labels
         cpu          = var.dd_cpu
         memory       = var.dd_memory_limit_mib
+
+        readonlyRootFilesystem = true
         secrets = var.dd_api_key_secret != null ? [
           {
             name      = "DD_API_KEY"
@@ -337,7 +419,19 @@ locals {
             protocol      = "tcp"
           }
         ],
-        mountPoints      = local.apm_dsd_mount,
+
+        dependsOn = [
+          {
+            condition     = "SUCCESS"
+            containerName = "init-config"
+          },
+          {
+            condition     = "SUCCESS"
+            containerName = "init-volume"
+          }
+        ]
+
+        mountPoints      = local.dd_agent_mount,
         logConfiguration = local.dd_firelens_log_configuration,
         dependsOn        = try(var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled, false) && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
         systemControls   = []
