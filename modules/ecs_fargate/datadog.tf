@@ -91,11 +91,6 @@ locals {
         readOnly      = false
       },
       {
-        containerPath = "/var/log/datadog"
-        sourceVolume  = "agent-logs"
-        readOnly      = false
-      },
-      {
         containerPath = "/opt/datadog-agent/run"
         sourceVolume  = "agent-run"
         readOnly      = false
@@ -257,9 +252,6 @@ locals {
       name = "agent-tmp"
     },
     {
-      name = "agent-logs"
-    },
-    {
       name = "agent-run"
     }
   ]
@@ -306,6 +298,10 @@ locals {
       name  = "DD_INSTALL_INFO_INSTALLER_VERSION"
       value = local.install_info_installer_version
     },
+    {
+      name = "DD_LOG_FILE"
+      value = "/opt/datadog-agent/run/logs"
+    }
   ]
 
   dynamic_env = [
