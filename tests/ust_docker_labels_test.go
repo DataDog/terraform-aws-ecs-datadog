@@ -25,7 +25,7 @@ func (s *ECSFargateSuite) TestUSTDockerLabels() {
 
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
-	s.Equal(5, len(containers), "Expected 4 containers in the task definition (3 app containers + 1 agent)")
+	s.Equal(4, len(containers), "Expected 4 containers in the task definition (1 app container + 3 agent sidecar)")
 
 	// Expected UST docker labels that should be present on all application containers
 	expectedUSTLabels := map[string]string{
@@ -41,18 +41,14 @@ func (s *ECSFargateSuite) TestUSTDockerLabels() {
 	// Expect UST docker labels to be present on all Datadog containers with
 	// overwritten labels when UST docker labels are specified.
 	datadogContainers := []string{"datadog-agent", "datadog-log-router", "cws-instrumentation-init"}
-	expectedUSTLabels["com.datadoghq.tags.service"] = "docker-agent-service"
+	expectedAgentUSTLabels := map[string]string{
+		"com.datadoghq.tags.service": "docker-agent-service",
+		"com.datadoghq.tags.env":     "agent-dev",
+		"com.datadoghq.tags.version": "v1.2.3",
+	}
 	for _, containerName := range datadogContainers {
 		container, found := GetContainer(containers, containerName)
 		s.True(found, "Container %s not found in definitions", containerName)
-		AssertDockerLabels(s.T(), container, expectedUSTLabels)
+		AssertDockerLabels(s.T(), container, expectedAgentUSTLabels)
 	}
-
-	// Expect UST docker labels to be overwritten on application container if docker labels
-	// are specified in the container definition.
-	overwrittenLabels, found := GetContainer(containers, "app-overwritten-ust")
-	s.True(found, "Container app-overwritten-ust not found in definitions")
-	expectedUSTLabels["com.datadoghq.tags.service"] = "overwritten_name"
-	AssertDockerLabels(s.T(), overwrittenLabels, expectedUSTLabels)
-
 }

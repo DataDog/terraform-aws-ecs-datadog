@@ -183,9 +183,8 @@ locals {
         ),
         # Merge UST docker labels with any existing docker labels.
         dockerLabels = merge(
-          local.ust_docker_labels,
-          // Placing this after local.ust_docker_labels ensures user defined UST labels are not overwritten.
           lookup(container, "dockerLabels", {}),
+          local.ust_docker_labels,
         ),
         # Append new volume mounts to any existing mountPoints.
         mountPoints = concat(
@@ -306,13 +305,7 @@ locals {
     local.dynamic_env,
     local.origin_detection_vars,
     local.cws_vars,
-    local.ust_env_vars,
     local.dd_environment,
-  )
-
-  dd_agent_docker_labels = merge(
-    local.ust_docker_labels,
-    var.dd_docker_labels,
   )
 
   # Datadog Agent container definition
@@ -323,7 +316,7 @@ locals {
         image        = "${var.dd_registry}:${var.dd_image_version}"
         essential    = var.dd_essential
         environment  = local.dd_agent_env
-        dockerLabels = local.dd_agent_docker_labels
+        dockerLabels = var.dd_docker_labels
         cpu          = var.dd_cpu
         memory       = var.dd_memory_limit_mib
         secrets = var.dd_api_key_secret != null ? [
@@ -364,11 +357,6 @@ locals {
 
   dd_log_environment = var.dd_log_collection.fluentbit_config.environment != null ? var.dd_log_collection.fluentbit_config.environment : []
 
-  dd_log_agent_env = concat(
-    local.ust_env_vars,
-    local.dd_log_environment
-  )
-
   # Datadog log router container definition
   dd_log_container = local.is_fluentbit_supported ? [
     merge(
@@ -390,8 +378,8 @@ locals {
         memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
         user             = "0"
         mountPoints      = var.dd_log_collection.fluentbit_config.mountPoints
-        environment      = local.dd_log_agent_env
-        dockerLabels     = local.dd_agent_docker_labels
+        environment      = local.dd_log_environment
+        dockerLabels     = var.dd_docker_labels
         portMappings     = []
         systemControls   = []
         volumesFrom      = []
@@ -422,7 +410,7 @@ locals {
       command          = ["/cws-instrumentation", "setup", "--cws-volume-mount", "/cws-instrumentation-volume"]
       mountPoints      = local.cws_mount
       environment      = local.ust_env_vars
-      dockerLabels     = local.dd_agent_docker_labels
+      dockerLabels     = var.dd_docker_labels
       portMappings     = []
       systemControls   = []
       volumesFrom      = []

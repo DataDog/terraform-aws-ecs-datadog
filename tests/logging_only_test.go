@@ -42,7 +42,6 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 	expectedAgentEnvVars := map[string]string{
 		"DD_API_KEY":                     "test-api-key",
 		"DD_SITE":                        "datadoghq.com",
-		"DD_SERVICE":                     "test-service",
 		"DD_DOGSTATSD_TAG_CARDINALITY":   "orchestrator",
 		"DD_ECS_TASK_COLLECTION_ENABLED": "true",
 		"ECS_FARGATE":                    "true",
@@ -87,7 +86,6 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 
 	// Verify log router environment variables
 	expectedLogRouterEnvVars := map[string]string{
-		"DD_SERVICE":                           "test-service",
 		"DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL": "true",
 	}
 	AssertEnvVars(s.T(), logRouterContainer, expectedLogRouterEnvVars)

@@ -51,7 +51,6 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 		"DD_API_KEY":                                  "test-api-key",
 		"DD_SITE":                                     "datadoghq.com",
 		"ECS_FARGATE":                                 "true",
-		"DD_SERVICE":                                  "test-service",
 		"DD_RUNTIME_SECURITY_CONFIG_EBPFLESS_ENABLED": "true",
 		"DD_INSTALL_INFO_TOOL":                        "terraform",
 		// "DD_INSTALL_INFO_INSTALLER_VERSION":        "0.0.0",
@@ -61,7 +60,6 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 	expectedLogOptions := map[string]string{
 		"apikey":      "test-api-key",
 		"provider":    "ecs",
-		"dd_service":  "dd-test",
 		"Host":        "http-intake.logs.datadoghq.com",
 		"TLS":         "on",
 		"dd_source":   "dd-test",
