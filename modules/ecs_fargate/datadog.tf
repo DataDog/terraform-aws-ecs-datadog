@@ -409,7 +409,6 @@ locals {
       entryPoint       = []
       command          = ["/cws-instrumentation", "setup", "--cws-volume-mount", "/cws-instrumentation-volume"]
       mountPoints      = local.cws_mount
-      environment      = local.ust_env_vars
       dockerLabels     = var.dd_docker_labels
       portMappings     = []
       systemControls   = []
