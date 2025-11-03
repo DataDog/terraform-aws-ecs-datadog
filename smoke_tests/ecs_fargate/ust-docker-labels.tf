@@ -31,8 +31,8 @@ module "dd_task_ust_docker_labels" {
 
   dd_docker_labels = {
     "com.datadoghq.tags.service" : "docker-agent-service",
-    "com.datadoghq.tags.env": "agent-dev",
-    "com.datadoghq.tags.version": "v1.2.3"
+    "com.datadoghq.tags.env" : "agent-dev",
+    "com.datadoghq.tags.version" : "v1.2.3"
   }
 
   # Configure Task Definition with multiple containers
