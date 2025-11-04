@@ -119,6 +119,18 @@ locals {
     ] : [],
   )
 
+  ust_docker_labels = merge(
+    var.dd_env != null ? {
+      "com.datadoghq.tags.env" = var.dd_env
+    } : {},
+    var.dd_service != null ? {
+      "com.datadoghq.tags.service" = var.dd_service
+    } : {},
+    var.dd_version != null ? {
+      "com.datadoghq.tags.version" = var.dd_version
+    } : {},
+  )
+
   application_env_vars = concat(
     var.dd_apm.profiling != null ? [
       {
@@ -168,6 +180,11 @@ locals {
           local.dsd_port_var,
           local.ust_env_vars,
           local.application_env_vars,
+        ),
+        # Merge UST docker labels with any existing docker labels.
+        dockerLabels = merge(
+          lookup(container, "dockerLabels", {}),
+          local.ust_docker_labels,
         ),
         # Append new volume mounts to any existing mountPoints.
         mountPoints = concat(
@@ -288,7 +305,6 @@ locals {
     local.dynamic_env,
     local.origin_detection_vars,
     local.cws_vars,
-    local.ust_env_vars,
     local.dd_environment,
   )
 
@@ -296,12 +312,13 @@ locals {
   dd_agent_container = [
     merge(
       {
-        name        = "datadog-agent"
-        image       = "${var.dd_registry}:${var.dd_image_version}"
-        essential   = var.dd_essential
-        environment = local.dd_agent_env
-        cpu         = var.dd_cpu
-        memory      = var.dd_memory_limit_mib
+        name         = "datadog-agent"
+        image        = "${var.dd_registry}:${var.dd_image_version}"
+        essential    = var.dd_essential
+        environment  = local.dd_agent_env
+        dockerLabels = var.dd_docker_labels
+        cpu          = var.dd_cpu
+        memory       = var.dd_memory_limit_mib
         secrets = var.dd_api_key_secret != null ? [
           {
             name      = "DD_API_KEY"
@@ -340,11 +357,6 @@ locals {
 
   dd_log_environment = var.dd_log_collection.fluentbit_config.environment != null ? var.dd_log_collection.fluentbit_config.environment : []
 
-  dd_log_agent_env = concat(
-    local.ust_env_vars,
-    local.dd_log_environment
-  )
-
   # Datadog log router container definition
   dd_log_container = local.is_fluentbit_supported ? [
     merge(
@@ -366,7 +378,8 @@ locals {
         memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
         user             = "0"
         mountPoints      = var.dd_log_collection.fluentbit_config.mountPoints
-        environment      = local.dd_log_agent_env
+        environment      = local.dd_log_environment
+        dockerLabels     = var.dd_docker_labels
         portMappings     = []
         systemControls   = []
         volumesFrom      = []
@@ -396,7 +409,7 @@ locals {
       entryPoint       = []
       command          = ["/cws-instrumentation", "setup", "--cws-volume-mount", "/cws-instrumentation-volume"]
       mountPoints      = local.cws_mount
-      environment      = local.ust_env_vars
+      dockerLabels     = var.dd_docker_labels
       portMappings     = []
       systemControls   = []
       volumesFrom      = []

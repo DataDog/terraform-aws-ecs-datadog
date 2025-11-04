@@ -118,3 +118,14 @@ func AssertContainerDependency(t *testing.T, container types.ContainerDefinition
 	assert.True(t, found, "Expected dependency (container:%s, condition:%s) not found in %s container",
 		*expectedDependency.ContainerName, expectedDependency.Condition, *container.Name)
 }
+
+// AssertDockerLabels checks if the expected docker labels are all present in the container
+func AssertDockerLabels(t *testing.T, container types.ContainerDefinition, expectedLabels map[string]string) {
+	assert.NotNil(t, container.Name, "Container name cannot be nil")
+
+	for key, expectedValue := range expectedLabels {
+		value, found := container.DockerLabels[key]
+		assert.True(t, found, "Docker label %s not found in %s container", key, *container.Name)
+		assert.Equal(t, expectedValue, value, "Docker label %s value does not match expected in %s container", key, *container.Name)
+	}
+}

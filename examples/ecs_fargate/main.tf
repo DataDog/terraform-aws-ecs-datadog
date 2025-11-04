@@ -13,10 +13,13 @@ module "datadog_ecs_fargate_task" {
   # Configure Datadog
   dd_api_key                       = var.dd_api_key
   dd_site                          = var.dd_site
-  dd_service                       = var.dd_service
   dd_tags                          = "team:cont-p, owner:container-monitoring"
   dd_essential                     = true
   dd_is_datadog_dependency_enabled = true
+
+  dd_service = var.dd_service
+  dd_env     = var.dd_env
+  dd_version = var.dd_version
 
   dd_environment = [
     {

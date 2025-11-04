@@ -96,6 +96,12 @@ variable "dd_environment" {
   nullable    = false
 }
 
+variable "dd_docker_labels" {
+  description = "Datadog Agent container docker labels"
+  type        = map(string)
+  default     = {}
+}
+
 variable "dd_tags" {
   description = "Datadog Agent global tags (eg. `key1:value1, key2:value2`)"
   type        = string

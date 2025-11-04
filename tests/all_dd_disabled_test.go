@@ -42,7 +42,6 @@ func (s *ECSFargateSuite) TestAllDDDisabled() {
 	expectedAgentEnvVars := map[string]string{
 		"DD_API_KEY":                     "test-api-key",
 		"DD_SITE":                        "datadoghq.com",
-		"DD_SERVICE":                     "test-service",
 		"DD_TAGS":                        "team:cont-p, owner:container-monitoring",
 		"DD_DOGSTATSD_TAG_CARDINALITY":   "orchestrator",
 		"DD_ECS_TASK_COLLECTION_ENABLED": "true",
