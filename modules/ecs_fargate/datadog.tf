@@ -299,7 +299,7 @@ locals {
       value = local.install_info_installer_version
     },
     {
-      name = "DD_LOG_FILE"
+      name  = "DD_LOG_FILE"
       value = "/opt/datadog-agent/run/logs"
     }
   ]
@@ -364,28 +364,6 @@ locals {
         }
       ]
     },
-    {
-      cpu                    = 0
-      memory                 = 128
-      name                   = "init-config"
-      image                  = "${var.dd_registry}:${var.dd_image_version}"
-      essential              = false
-      readOnlyRootFilesystem = true
-      command                = ["/bin/sh", "-c", "for script in $(find /etc/cont-init.d/ -type f -name '*.sh' | sort) ; do bash $script ; done"]
-      dependsOn = [
-        {
-          condition     = "SUCCESS"
-          containerName = "init-volume"
-        }
-      ]
-      mountPoints = [
-        {
-          sourceVolume  = "agent-config"
-          containerPath = "/etc/datadog-agent"
-          readOnly      = false
-        }
-      ]
-    },
     merge(
       {
         name         = "datadog-agent"
@@ -417,10 +395,6 @@ locals {
         ],
 
         dependsOn = [
-          {
-            condition     = "SUCCESS"
-            containerName = "init-config"
-          },
           {
             condition     = "SUCCESS"
             containerName = "init-volume"
