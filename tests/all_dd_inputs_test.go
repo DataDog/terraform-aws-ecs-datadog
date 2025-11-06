@@ -25,7 +25,7 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
-	s.Equal(6, len(containers), "Expected 6 containers in the task definition")
+	s.Equal(7, len(containers), "Expected 6 containers in the task definition")
 
 	// Test Agent Container
 	agentContainer, found := GetContainer(containers, "datadog-agent")
