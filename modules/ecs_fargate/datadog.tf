@@ -79,7 +79,7 @@ locals {
 
   dd_agent_mount = concat(
     local.apm_dsd_mount,
-    [
+    var.dd_readonly_root_filesystem ? [
       {
         containerPath = "/etc/datadog-agent"
         sourceVolume  = "agent-config"
@@ -95,7 +95,7 @@ locals {
         sourceVolume  = "agent-run"
         readOnly      = false
       }
-    ]
+    ] : []
   )
 
   apm_socket_var = local.is_apm_socket_mount ? [

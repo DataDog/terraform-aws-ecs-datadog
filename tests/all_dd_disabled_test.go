@@ -26,7 +26,7 @@ func (s *ECSFargateSuite) TestAllDDDisabled() {
 
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
-	s.Equal(3, len(containers), "Expected 2 containers in the task definition")
+	s.Equal(2, len(containers), "Expected 2 containers in the task definition")
 
 	// Test Agent Container
 	agentContainer, found := GetContainer(containers, "datadog-agent")
@@ -59,11 +59,7 @@ func (s *ECSFargateSuite) TestAllDDDisabled() {
 	s.Equal(int32(3), *agentContainer.HealthCheck.Retries, "Agent health check retries should be 3")
 	s.Equal(int32(60), *agentContainer.HealthCheck.StartPeriod, "Agent health check start period should be 60")
 
-	s.Equal(3, len(agentContainer.MountPoints), "Expected 3 mount points when features are disabled")
-	// Verify none are apm/dsd volume mount points
-	for _, mountPoint := range agentContainer.MountPoints {
-		s.NotEqual("dd-socket", *mountPoint.SourceVolume, "Mount point should not be dd-socket")
-	}
+	s.Equal(0, len(agentContainer.MountPoints), "Expected no mount points when features are disabled")
 
 	// Test dummy container
 	dummyContainer, found := GetContainer(containers, "dummy-container")
