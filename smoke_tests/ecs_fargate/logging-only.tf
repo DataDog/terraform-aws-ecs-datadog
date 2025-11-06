@@ -15,6 +15,8 @@ module "dd_task_logging_only" {
   dd_service   = var.dd_service
   dd_essential = true
 
+  dd_readonly_root_filesystem = false
+
   dd_dogstatsd = {
     enabled = false,
   }

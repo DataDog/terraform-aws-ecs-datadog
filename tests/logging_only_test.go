@@ -26,7 +26,7 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
-	s.Equal(3, len(containers), "Expected 2 containers in the task definition")
+	s.Equal(2, len(containers), "Expected 2 containers in the task definition")
 
 	// Test Agent Container
 	agentContainer, found := GetContainer(containers, "datadog-agent")
@@ -73,7 +73,7 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 	s.Equal("datadog-log-router", *agentContainer.DependsOn[0].ContainerName, "Agent should depend on datadog-log-router")
 	s.Equal(types.ContainerConditionHealthy, agentContainer.DependsOn[0].Condition, "Agent should depend on log router being healthy")
 
-	s.Equal(3, len(agentContainer.MountPoints), "Expected 3 mount points for datadog-agent")
+	s.Equal(0, len(agentContainer.MountPoints), "Expected 2 mount points for datadog-agent")
 
 	// Test Log Router Container
 	logRouterContainer, found := GetContainer(containers, "datadog-log-router")

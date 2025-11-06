@@ -256,13 +256,6 @@ locals {
     }
   ] : []
 
-  rofs_agent_depends_on = var.dd_readonly_root_filesystem ? [
-    {
-      condition     = "SUCCESS"
-      containerName = "init-volume"
-    }
-  ] : []
-
   # Volume configuration for task
   apm_dsd_volume = local.is_apm_dsd_volume ? [
     {
@@ -353,6 +346,16 @@ locals {
     local.dd_environment,
   )
 
+  dd_agent_dependency = concat(
+    var.dd_readonly_root_filesystem ? [
+      {
+        condition     = "SUCCESS"
+        containerName = "init-volume"
+      }
+    ] : [],
+    try(var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled, false) && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
+  )
+
   # Datadog Agent container definition
   dd_agent_container = concat(
     var.dd_readonly_root_filesystem ? [
@@ -404,11 +407,9 @@ locals {
             }
           ],
 
-          dependsOn = local.rofs_agent_depends_on,
-
           mountPoints      = local.dd_agent_mount,
           logConfiguration = local.dd_firelens_log_configuration,
-          dependsOn        = try(var.dd_log_collection.fluentbit_config.is_log_router_dependency_enabled, false) && local.dd_firelens_log_configuration != null ? local.log_router_dependency : [],
+          dependsOn        = local.dd_agent_dependency
           systemControls   = []
           volumesFrom      = []
         },
