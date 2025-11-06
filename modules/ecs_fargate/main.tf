@@ -177,6 +177,10 @@ resource "aws_ecs_task_definition" "this" {
       condition     = var.dd_log_collection.enabled == false || (var.dd_log_collection.enabled == true && local.is_linux == true)
       error_message = "Log collection is not supported on Windows. Please set `dd_log_collection.enabled` to `false`."
     }
+    precondition {
+      condition     = var.dd_readonly_root_filesystem == false || (var.dd_readonly_root_filesystem == true && local.is_linux == true)
+      error_message = "Readonly root filesystem is only supported on Linux. Please set `dd_readonly_root_filesystem` to `false`."
+    }
     # Must provide only one of the two Datadog API key options
     precondition {
       condition     = (var.dd_api_key == null && var.dd_api_key_secret != null) || (var.dd_api_key != null && var.dd_api_key_secret == null)
