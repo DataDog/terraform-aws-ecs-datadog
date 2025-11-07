@@ -17,6 +17,7 @@ module "dd_task_all_dd_inputs" {
   dd_tags                          = "team:cont-p, owner:container-monitoring"
   dd_essential                     = true
   dd_is_datadog_dependency_enabled = true
+  dd_readonly_root_filesystem      = true
 
   dd_environment = [
     {

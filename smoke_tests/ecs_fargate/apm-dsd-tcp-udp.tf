@@ -18,6 +18,8 @@ module "dd_task_apm_dsd_tcp_udp" {
   dd_tags      = "team:cont-p, owner:container-monitoring"
   dd_essential = true
 
+  dd_readonly_root_filesystem = true
+
   dd_dogstatsd = {
     enabled        = true,
     socket_enabled = false,
