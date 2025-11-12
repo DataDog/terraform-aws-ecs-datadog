@@ -65,6 +65,13 @@ variable "dd_is_datadog_dependency_enabled" {
   nullable    = false
 }
 
+variable "dd_readonly_root_filesystem" {
+  description = "Datadog Agent container runs with read-only root filesystem enabled"
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 variable "dd_health_check" {
   description = "Datadog Agent health check configuration"
   type = object({

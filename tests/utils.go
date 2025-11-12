@@ -16,6 +16,10 @@ import (
 var (
 	MountDdSocket       = types.MountPoint{SourceVolume: aws.String("dd-sockets"), ContainerPath: aws.String("/var/run/datadog"), ReadOnly: aws.Bool(false)}
 	MountCWS            = types.MountPoint{SourceVolume: aws.String("cws-instrumentation-volume"), ContainerPath: aws.String("/cws-instrumentation-volume"), ReadOnly: aws.Bool(false)}
+	MountInitVolume     = types.MountPoint{SourceVolume: aws.String("agent-config"), ContainerPath: aws.String("/agent-config"), ReadOnly: aws.Bool(false)}
+	MountAgentConfig    = types.MountPoint{SourceVolume: aws.String("agent-config"), ContainerPath: aws.String("/etc/datadog-agent"), ReadOnly: aws.Bool(false)}
+	MountAgentTmp       = types.MountPoint{SourceVolume: aws.String("agent-tmp"), ContainerPath: aws.String("/tmp"), ReadOnly: aws.Bool(false)}
+	MountAgentRun       = types.MountPoint{SourceVolume: aws.String("agent-run"), ContainerPath: aws.String("/opt/datadog-agent/run"), ReadOnly: aws.Bool(false)}
 	PortTCP             = types.PortMapping{ContainerPort: aws.Int32(8126), HostPort: aws.Int32(8126), Protocol: types.TransportProtocolTcp}
 	PortUDP             = types.PortMapping{ContainerPort: aws.Int32(8125), HostPort: aws.Int32(8125), Protocol: types.TransportProtocolUdp}
 	DependencyAgent     = types.ContainerDependency{ContainerName: aws.String("datadog-agent"), Condition: types.ContainerConditionHealthy}

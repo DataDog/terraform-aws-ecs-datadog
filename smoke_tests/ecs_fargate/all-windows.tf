@@ -16,6 +16,8 @@ module "dd_task_all_windows" {
   dd_site    = var.dd_site
   dd_service = var.dd_service
 
+  dd_readonly_root_filesystem = false
+
   dd_apm = {
     enabled = true
   }

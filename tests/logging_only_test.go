@@ -73,8 +73,7 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 	s.Equal("datadog-log-router", *agentContainer.DependsOn[0].ContainerName, "Agent should depend on datadog-log-router")
 	s.Equal(types.ContainerConditionHealthy, agentContainer.DependsOn[0].Condition, "Agent should depend on log router being healthy")
 
-	// Verify no mount points
-	s.Equal(0, len(agentContainer.MountPoints), "Expected no mount points for datadog-agent")
+	s.Equal(0, len(agentContainer.MountPoints), "Expected 2 mount points for datadog-agent")
 
 	// Test Log Router Container
 	logRouterContainer, found := GetContainer(containers, "datadog-log-router")

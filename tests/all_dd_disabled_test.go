@@ -59,8 +59,7 @@ func (s *ECSFargateSuite) TestAllDDDisabled() {
 	s.Equal(int32(3), *agentContainer.HealthCheck.Retries, "Agent health check retries should be 3")
 	s.Equal(int32(60), *agentContainer.HealthCheck.StartPeriod, "Agent health check start period should be 60")
 
-	// Verify no mount points (apm/dsd volumes should not be present)
-	s.Equal(0, len(agentContainer.MountPoints), "Expected no mount points for datadog-agent when features are disabled")
+	s.Equal(0, len(agentContainer.MountPoints), "Expected no mount points when features are disabled")
 
 	// Test dummy container
 	dummyContainer, found := GetContainer(containers, "dummy-container")

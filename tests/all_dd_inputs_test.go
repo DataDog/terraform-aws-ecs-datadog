@@ -25,7 +25,11 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
-	s.Equal(6, len(containers), "Expected 6 containers in the task definition")
+	s.Equal(7, len(containers), "Expected 6 containers in the task definition")
+
+	initContainer, found := GetContainer(containers, "init-volume")
+	s.True(found, "Container init-volume not found in definitions")
+	AssertMountPoint(s.T(), initContainer, MountInitVolume)
 
 	// Test Agent Container
 	agentContainer, found := GetContainer(containers, "datadog-agent")
@@ -37,6 +41,9 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 	AssertPortMapping(s.T(), agentContainer, PortUDP)
 	AssertPortMapping(s.T(), agentContainer, PortTCP)
 	AssertMountPoint(s.T(), agentContainer, MountDdSocket)
+	AssertMountPoint(s.T(), agentContainer, MountAgentConfig)
+	AssertMountPoint(s.T(), agentContainer, MountAgentTmp)
+	AssertMountPoint(s.T(), agentContainer, MountAgentRun)
 	AssertContainerDependency(s.T(), agentContainer, DependencyLogRouter)
 
 	expectedAgentEnvvars := map[string]string{

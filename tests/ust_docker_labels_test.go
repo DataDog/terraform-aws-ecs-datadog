@@ -25,7 +25,7 @@ func (s *ECSFargateSuite) TestUSTDockerLabels() {
 
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
-	s.Equal(4, len(containers), "Expected 4 containers in the task definition (1 app container + 3 agent sidecar)")
+	s.Equal(5, len(containers), "Expected 4 containers in the task definition (1 app container + 3 agent sidecar)")
 
 	// Expected UST docker labels that should be present on all application containers
 	expectedUSTLabels := map[string]string{

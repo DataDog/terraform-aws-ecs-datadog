@@ -26,7 +26,7 @@ func (s *ECSFargateSuite) TestApmDsdTcpUdp() {
 
 	err := json.Unmarshal([]byte(task["container_definitions"]), &containers)
 	s.NoError(err, "Failed to parse container definitions")
-	s.Equal(3, len(containers), "Expected 3 containers in the task definition")
+	s.Equal(4, len(containers), "Expected 3 containers in the task definition")
 
 	// Test Agent Container
 	agentContainer, found := GetContainer(containers, "datadog-agent")
@@ -60,8 +60,11 @@ func (s *ECSFargateSuite) TestApmDsdTcpUdp() {
 	}
 	AssertNotEnvVars(s.T(), agentContainer, disabledSocketEnvVars)
 
-	// Verify no mount points (as sockets are not used)
-	s.Equal(0, len(agentContainer.MountPoints), "Expected no mount points for datadog-agent when socket is disabled")
+	s.Equal(3, len(agentContainer.MountPoints), "Expected 3 mount points when socket is disabled")
+	// Verify none are apm/dsd volume mount points
+	for _, mountPoint := range agentContainer.MountPoints {
+		s.NotEqual("dd-socket", *mountPoint.SourceVolume, "Mount point should not be dd-socket")
+	}
 
 	// Test DogStatsD App Container
 	dogstatsdContainer, found := GetContainer(containers, "datadog-dogstatsd-app")

@@ -20,6 +20,7 @@ module "dd_task_ust_docker_labels" {
   dd_essential = true
 
   dd_is_datadog_dependency_enabled = true
+  dd_readonly_root_filesystem      = true
 
   dd_log_collection = {
     enabled = true,
