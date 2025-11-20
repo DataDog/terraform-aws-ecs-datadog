@@ -25,6 +25,12 @@ variable "dd_api_key_secret" {
   }
 }
 
+variable "dd_manage_execution_role_secret_permissions" {
+  description = "Whether to create and attach secret access permissions to the execution role. Set to false if your execution role already has the necessary secretsmanager:GetSecretValue permissions."
+  type        = bool
+  default     = true
+}
+
 variable "dd_registry" {
   description = "Datadog Agent image registry"
   type        = string

@@ -12,7 +12,7 @@
 # in order to provide permissions to access the secret
 
 locals {
-  create_dd_secret_perms = var.dd_api_key_secret != null
+  create_dd_secret_perms = var.dd_api_key_secret != null && var.dd_manage_execution_role_secret_permissions
   edit_execution_role    = var.execution_role != null && local.create_dd_secret_perms
   create_execution_role  = var.execution_role == null && local.create_dd_secret_perms
   parsed_exec_role_name  = var.execution_role == null ? null : split("/", var.execution_role.arn)[length(split("/", var.execution_role.arn)) - 1]
