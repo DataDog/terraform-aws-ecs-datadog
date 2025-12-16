@@ -65,16 +65,17 @@ resource "aws_iam_role" "new_ecs_task_execution_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "new_ecs_task_execution_role_policy" {
-  count      = local.create_execution_role ? 1 : 0
-  role       = aws_iam_role.new_ecs_task_execution_role[0].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+locals {
+  new_execution_role_policy_map = merge(
+    { "AmazonECSTaskExecutionRolePolicy" = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" },
+    local.create_dd_secret_perms ? { "DDSecretAccess" = aws_iam_policy.dd_secret_access[0].arn } : {}
+  )
 }
 
-resource "aws_iam_role_policy_attachment" "new_role_dd_secret" {
-  count      = local.create_execution_role ? 1 : 0
+resource "aws_iam_role_policy_attachment" "new_ecs_task_execution_role_policy" {
+  for_each   = local.create_execution_role ? local.new_execution_role_policy_map : {}
   role       = aws_iam_role.new_ecs_task_execution_role[0].name
-  policy_arn = aws_iam_policy.dd_secret_access[0].arn
+  policy_arn = each.value
 }
 
 # ==============================
@@ -142,8 +143,14 @@ resource "aws_iam_role" "new_ecs_task_role" {
 }
 
 # Always attach `dd_ecs_task_permissions`
+locals {
+  new_task_role_policy_map = {
+    "DDECSTaskPermissions" = aws_iam_policy.dd_ecs_task_permissions.arn
+  }
+}
+
 resource "aws_iam_role_policy_attachment" "new_role_ecs_task_permissions" {
-  count      = local.create_task_role ? 1 : 0
+  for_each   = local.create_task_role ? local.new_task_role_policy_map : {}
   role       = aws_iam_role.new_ecs_task_role[0].name
-  policy_arn = aws_iam_policy.dd_ecs_task_permissions.arn
+  policy_arn = each.value
 }
