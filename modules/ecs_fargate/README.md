@@ -199,6 +199,40 @@ The default Datadog site is `datadoghq.com`. To use a different site set the `DD
 
 All of the input variables prefixed with `dd` are related to Datadog configuration. In order to further customize the Datadog agent configuration beyond the provided interface in this module, you can use the `dd_environment_variables` input argument to customize the Agent configuration. **Note** that `dd_environment_variables` overwrites any other environment variables with the same keys defined. For more information on Datadog configuration, reference [Amazon ECS on AWS Fargate](https://docs.datadoghq.com/integrations/ecs_fargate/?tab=webui) Datadog documentation.
 
+#### DogStatsD
+
+The `dd_dogstatsd` configuration block controls the [DogStatsD server](https://docs.datadoghq.com/developers/dogstatsd/?tab=containeragent#datadog-agent-dogstatsd-server), which collects custom metrics from your applications.
+
+*   `enabled` (default: `true`): Enables the DogStatsD server.
+*   `origin_detection_enabled` (default: `true`): Enables origin detection, which allows DogStatsD to automatically detect the container where the metrics originated and tag them accordingly.
+*   `dogstatsd_cardinality` (default: `orchestrator`): Sets tag cardinality (`low`, `orchestrator`, or `high`). Use `orchestrator` for task-level tags or `high` for granular tagging (may impact costs).
+*   `socket_enabled` (default: `true`): Enables DogStatsD over a Unix Domain Socket. Adds relevant volumes, mounts, and environment variables. This is the recommended communication method on Fargate as it avoids networking overhead and simplifies origin detection.
+
+For the full list of configuration options, reference the [inputs](#inputs).
+
+#### APM (Application Performance Monitoring)
+
+The `dd_apm` configuration block controls the Datadog Trace Agent, which collects traces from your instrumented applications.
+
+*   `enabled` (default: `true`): Enables the Trace Agent.
+*   `socket_enabled` (default: `true`): Enables APM over a Unix Domain Socket. Adds relevant volumes, mounts, and environment variables. Similar to DogStatsD, this is the preferred method for Fargate tasks to communicate trace data to the Agent.
+
+For the full list of configuration options, reference the [inputs](#inputs).
+
+#### Log Collection
+
+The `dd_log_collection` configuration block sets up log collection using the [AWS FireLens log driver](https://docs.datadoghq.com/integrations/aws-fargate/?tab=webui#log-collection) with Fluent Bit.
+
+*   `enabled` (default: `false`): Enables log collection. When enabled, a Fluent Bit sidecar container is added to your task to route logs to Datadog and the log driver configuration is added to all containers.
+*   `fluentbit_config` (optional): Configuration for the Fluent Bit log router and Firelens log driver.
+    *   `is_log_router_essential` (default: `false`): Marks the log router as an essential container.
+    *   `is_log_router_dependency_enabled` (default: `false`): Adds a dependency so application containers start only after the log router is healthy. This ensures no logs are missed during startup.
+    *   `log_driver_configuration` (optional): Configuration for the [Datadog fluentbit output plugin](https://docs.fluentbit.io/manual/data-pipeline/outputs/datadog).
+
+**Note**: enabling this feature automatically applies a log driver configuration to your application containers based on the settings in `dd_log_collection.fluentbit_config.log_driver_configuration`. Use this block to customize the Datadog output plugin parameters, such as `service_name`, `source_name`, `message_key`, `tls`, `compress`, and `host_endpoint`.
+
+For the full list of configuration options, reference the [inputs](#inputs).
+
 ### Miscellaneous
 
 To support Process monitoring with the Datadog Agent, the Fargate task must run with `pid_mode` set to `task`. This configuration, however, results in a bug limiting `exec` access onto only one container in the task. For more information, see the [related github issue](https://github.com/aws/containers-roadmap/issues/2268). If you require exec access, you can explicitly set the `pid_mode` to `null`.
