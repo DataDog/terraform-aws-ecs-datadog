@@ -1,9 +1,6 @@
 # Datadog ECS Fargate Terraform
 
-> **Technical Preview**: This module is in technical preview. While it is functional, we recommend validating it in your environment before widespread use.
-> If you encounter any issues, please open a GitHub issue to let us know.
-
-Use this Terraform module to install Datadog monitoring for AWS ECS Fargate tasks.
+Use this Terraform module to install Datadog monitoring for AWS ECS Fargate tasks. If you encounter any issues, please open a GitHub issue to let us know.
 
 This Terraform module wraps the [aws_ecs_task_definition](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) resource. It provides the same variable inputs and outputs as the `aws_ecs_task_definition` resource. This module then automatically configures your task definition for Datadog monitoring by:
 
