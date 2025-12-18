@@ -86,7 +86,7 @@ resource "aws_iam_role_policy_attachment" "new_ecs_task_execution_role_policy" {
 # in order to add permissions for the ecs_fargate check
 
 locals {
-  edit_task_role        = var.task_role != null
+  edit_task_role        = var.task_role != null && var.dd_manage_task_role_permissions
   create_task_role      = var.task_role == null
   parsed_task_role_name = var.task_role == null ? null : split("/", var.task_role.arn)[length(split("/", var.task_role.arn)) - 1]
 }

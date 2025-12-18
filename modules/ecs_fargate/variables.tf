@@ -31,6 +31,12 @@ variable "dd_manage_execution_role_secret_permissions" {
   default     = true
 }
 
+variable "dd_manage_task_role_permissions" {
+  description = "Whether to create and attach permissions to the task role. Set to false if your task role already has the necessary permissions."
+  type        = bool
+  default     = true
+}
+
 variable "dd_registry" {
   description = "Datadog Agent image registry"
   type        = string
