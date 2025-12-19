@@ -25,18 +25,6 @@ variable "dd_api_key_secret" {
   }
 }
 
-variable "dd_manage_execution_role_secret_permissions" {
-  description = "Whether to create and attach secret access permissions to the execution role. Set to false if your execution role already has the necessary secretsmanager:GetSecretValue permissions."
-  type        = bool
-  default     = true
-}
-
-variable "dd_manage_task_role_permissions" {
-  description = "Whether to create and attach permissions to the task role. Set to false if your task role already has the necessary permissions."
-  type        = bool
-  default     = true
-}
-
 variable "dd_registry" {
   description = "Datadog Agent image registry"
   type        = string
@@ -349,9 +337,10 @@ variable "ephemeral_storage" {
 }
 
 variable "execution_role" {
-  description = "ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume"
+  description = "ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume. Contains:\n  - `arn` (string): The ARN of the IAM role.\n  - `add_dd_ecs_permissions` (bool): Whether to automatically add Datadog ECS permissions to the role to fetch container and cluster metadata."
   type = object({
-    arn = string
+    arn                    = string
+    add_dd_ecs_permissions = optional(bool, true)
   })
   default = null
   validation {
@@ -465,9 +454,10 @@ variable "tags" {
 }
 
 variable "task_role" {
-  description = "The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services"
+  description = "The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services. Contains:\n  - `arn` (string): The ARN of the IAM role.\n  - `add_dd_ecs_permissions` (bool): Whether to automatically add Datadog ECS permissions to the role to fetch a provided Datadog API key secret."
   type = object({
-    arn = string
+    arn                    = string
+    add_dd_ecs_permissions = optional(bool, true)
   })
   default = null
   validation {

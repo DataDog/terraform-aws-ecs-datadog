@@ -12,7 +12,7 @@
 # in order to provide permissions to access the secret
 
 locals {
-  create_dd_secret_perms = var.dd_api_key_secret != null && var.dd_manage_execution_role_secret_permissions
+  create_dd_secret_perms = var.dd_api_key_secret != null && try(var.execution_role.add_dd_ecs_permissions, true)
   edit_execution_role    = var.execution_role != null && local.create_dd_secret_perms
   create_execution_role  = var.execution_role == null && local.create_dd_secret_perms
   parsed_exec_role_name  = var.execution_role == null ? null : split("/", var.execution_role.arn)[length(split("/", var.execution_role.arn)) - 1]
@@ -86,7 +86,7 @@ resource "aws_iam_role_policy_attachment" "new_ecs_task_execution_role_policy" {
 # in order to add permissions for the ecs_fargate check
 
 locals {
-  edit_task_role        = var.task_role != null && var.dd_manage_task_role_permissions
+  edit_task_role        = var.task_role != null && try(var.task_role.add_dd_ecs_permissions, true)
   create_task_role      = var.task_role == null
   parsed_task_role_name = var.task_role == null ? null : split("/", var.task_role.arn)[length(split("/", var.task_role.arn)) - 1]
 }
