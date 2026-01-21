@@ -114,7 +114,7 @@ module "dd_task_all_ecs_inputs" {
       ProxyIngressPort = 15000
     }
   }
-  task_role = { arn = aws_iam_role.ecs_task_role.arn }
+  task_role = { arn = aws_iam_role.ecs_task_role.arn, add_dd_ecs_permissions = false }
   volumes = [
     {
       name = "docker-storage"

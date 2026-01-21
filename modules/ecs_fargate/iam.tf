@@ -95,6 +95,7 @@ locals {
 # ECS Task Permissions Policy
 # ==============================
 data "aws_iam_policy_document" "dd_ecs_task_permissions" {
+  count = local.create_task_role || local.edit_task_role ? 1 : 0
   statement {
     effect = "Allow"
     actions = [
@@ -107,8 +108,9 @@ data "aws_iam_policy_document" "dd_ecs_task_permissions" {
 }
 
 resource "aws_iam_policy" "dd_ecs_task_permissions" {
+  count  = local.create_task_role || local.edit_task_role ? 1 : 0
   name   = "${var.family}-dd-ecs-task-policy"
-  policy = data.aws_iam_policy_document.dd_ecs_task_permissions.json
+  policy = data.aws_iam_policy_document.dd_ecs_task_permissions[0].json
 }
 
 # ==============================
@@ -118,7 +120,7 @@ resource "aws_iam_policy" "dd_ecs_task_permissions" {
 resource "aws_iam_role_policy_attachment" "existing_role_ecs_task_permissions" {
   count      = local.edit_task_role ? 1 : 0
   role       = local.parsed_task_role_name
-  policy_arn = aws_iam_policy.dd_ecs_task_permissions.arn
+  policy_arn = aws_iam_policy.dd_ecs_task_permissions[0].arn
 }
 
 
@@ -145,7 +147,7 @@ resource "aws_iam_role" "new_ecs_task_role" {
 # Always attach `dd_ecs_task_permissions`
 locals {
   new_task_role_policy_map = {
-    "DDECSTaskPermissions" = aws_iam_policy.dd_ecs_task_permissions.arn
+    "DDECSTaskPermissions" = local.create_task_role ? aws_iam_policy.dd_ecs_task_permissions[0].arn : null
   }
 }
 
