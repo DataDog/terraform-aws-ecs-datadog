@@ -303,6 +303,21 @@ variable "dd_cws" {
   }
 }
 
+variable "dd_orchestrator_explorer" {
+  description = "Configuration for Datadog Orchestrator Explorer"
+  type = object({
+    enabled = optional(bool, true)
+    url     = optional(string)
+  })
+  default = {
+    enabled = true
+  }
+  validation {
+    condition     = var.dd_orchestrator_explorer != null
+    error_message = "The Datadog Orchestrator Explorer configuration must be defined."
+  }
+}
+
 ################################################################################
 # Task Definition
 ################################################################################

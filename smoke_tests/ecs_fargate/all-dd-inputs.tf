@@ -57,6 +57,11 @@ module "dd_task_all_dd_inputs" {
     cpu     = 100,
   }
 
+  dd_orchestrator_explorer = {
+    enabled = false,
+    url     = "https://test-orchestrator-explorer.datadoghq.com",
+  }
+
   # Configure Task Definition
   family = "${var.test_prefix}-all-dd-inputs"
   container_definitions = jsonencode([
