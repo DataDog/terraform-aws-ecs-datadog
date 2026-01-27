@@ -47,19 +47,20 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 	AssertContainerDependency(s.T(), agentContainer, DependencyLogRouter)
 
 	expectedAgentEnvvars := map[string]string{
-		"DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT":        "true",
-		"DD_INSTALL_INFO_TOOL_VERSION":                "terraform-aws-ecs-datadog",
-		"DD_DOGSTATSD_ORIGIN_DETECTION":               "true",
-		"DD_RUNTIME_SECURITY_CONFIG_ENABLED":          "true",
-		"DD_DOGSTATSD_TAG_CARDINALITY":                "high",
-		"DD_TAGS":                                     "team:cont-p, owner:container-monitoring",
-		"DD_CUSTOM_FEATURE":                           "true",
-		"DD_ECS_TASK_COLLECTION_ENABLED":              "true",
-		"DD_API_KEY":                                  "test-api-key",
-		"DD_SITE":                                     "datadoghq.com",
-		"ECS_FARGATE":                                 "true",
-		"DD_RUNTIME_SECURITY_CONFIG_EBPFLESS_ENABLED": "true",
-		"DD_INSTALL_INFO_TOOL":                        "terraform",
+		"DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT":         "true",
+		"DD_INSTALL_INFO_TOOL_VERSION":                 "terraform-aws-ecs-datadog",
+		"DD_DOGSTATSD_ORIGIN_DETECTION":                "true",
+		"DD_RUNTIME_SECURITY_CONFIG_ENABLED":           "true",
+		"DD_DOGSTATSD_TAG_CARDINALITY":                 "high",
+		"DD_TAGS":                                      "team:cont-p, owner:container-monitoring",
+		"DD_CUSTOM_FEATURE":                            "true",
+		"DD_ECS_TASK_COLLECTION_ENABLED":               "false",
+		"DD_API_KEY":                                   "test-api-key",
+		"DD_SITE":                                      "datadoghq.com",
+		"ECS_FARGATE":                                  "true",
+		"DD_RUNTIME_SECURITY_CONFIG_EBPFLESS_ENABLED":  "true",
+		"DD_INSTALL_INFO_TOOL":                         "terraform",
+		"DD_ORCHESTRATOR_EXPLORER_ORCHESTRATOR_DD_URL": "https://test-orchestrator-explorer.datadoghq.com",
 		// "DD_INSTALL_INFO_INSTALLER_VERSION":        "0.0.0",
 	}
 	AssertEnvVars(s.T(), agentContainer, expectedAgentEnvvars)
