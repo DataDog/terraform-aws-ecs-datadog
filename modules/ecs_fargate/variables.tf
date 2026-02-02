@@ -180,12 +180,14 @@ variable "dd_apm" {
     socket_enabled                = optional(bool, true)
     profiling                     = optional(bool, false)
     trace_inferred_proxy_services = optional(bool, false)
+    data_streams                  = optional(bool, false)
   })
   default = {
     enabled                       = true
     socket_enabled                = true
     profiling                     = false
     trace_inferred_proxy_services = false
+    data_streams_enabled          = false
   }
   validation {
     condition     = var.dd_apm != null

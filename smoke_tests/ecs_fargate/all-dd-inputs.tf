@@ -38,6 +38,7 @@ module "dd_task_all_dd_inputs" {
     socket_enabled                = true,
     profiling                     = true,
     trace_inferred_proxy_services = true,
+    data_streams                  = true,
   }
 
   dd_log_collection = {

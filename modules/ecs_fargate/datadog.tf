@@ -165,6 +165,12 @@ locals {
         value = tostring(var.dd_apm.trace_inferred_proxy_services)
       }
     ] : [],
+    var.dd_apm.data_streams != null ? [
+      {
+        name  = "DD_DATA_STREAMS_ENABLED"
+        value = tostring(var.dd_apm.data_streams)
+      }
+    ] : [],
   )
 
   agent_dependency = var.dd_is_datadog_dependency_enabled && try(var.dd_health_check.command != null, false) ? [
