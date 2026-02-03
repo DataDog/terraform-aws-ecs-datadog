@@ -128,6 +128,7 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 		"DD_AGENT_HOST":        "127.0.0.1",
 		"DD_PROFILING_ENABLED": "true",
 		"DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED": "true",
+		"DD_DATA_STREAMS_ENABLED":                  "true",
 	}
 	AssertEnvVars(s.T(), apmAppContainer, expectedApmDsdEnvVars)
 	AssertMountPoint(s.T(), apmAppContainer, MountDdSocket)
