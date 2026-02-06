@@ -96,9 +96,9 @@ resource "aws_ecs_task_definition" "datadog_agent" {
     }
   }
 
-  skip_destroy  = var.skip_destroy
-  track_latest  = var.track_latest
-  tags          = merge(var.tags, local.tags)
+  skip_destroy = var.skip_destroy
+  track_latest = var.track_latest
+  tags         = merge(var.tags, local.tags)
 
   # Ensure IAM roles are created before task definition
   depends_on = [

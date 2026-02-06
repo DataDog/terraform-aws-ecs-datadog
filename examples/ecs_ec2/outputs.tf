@@ -43,8 +43,8 @@ output "app_service_name" {
 output "dd_agent_env_vars_example" {
   description = "Example of Datadog agent environment variables for user tasks"
   value = {
-    dogstatsd                     = module.datadog_agent.dogstatsd_env_vars
-    apm                           = module.datadog_agent.apm_env_vars
-    unified_service_tagging       = module.datadog_agent.unified_service_tagging_env_vars
+    dogstatsd               = module.datadog_agent.dogstatsd_env_vars
+    apm                     = module.datadog_agent.apm_env_vars
+    unified_service_tagging = module.datadog_agent.unified_service_tagging_env_vars
   }
 }
