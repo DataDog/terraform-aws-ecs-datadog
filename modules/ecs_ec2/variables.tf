@@ -109,7 +109,6 @@ variable "dd_cluster_name" {
   default     = null
 }
 
-
 variable "dd_checks_cardinality" {
   description = "Datadog Agent checks cardinality"
   type        = string

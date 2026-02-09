@@ -162,5 +162,3 @@ output "apm_env_vars" {
     }
   ]
 }
-
-
