@@ -56,7 +56,7 @@ variable "dd_memory_limit_mib" {
 variable "dd_essential" {
   description = "Whether the Datadog Agent container is essential"
   type        = bool
-  default     = false
+  default     = true
   nullable    = false
 }
 
