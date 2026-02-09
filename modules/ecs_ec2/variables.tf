@@ -109,23 +109,6 @@ variable "dd_cluster_name" {
   default     = null
 }
 
-variable "dd_service" {
-  description = "The task service name. Used for tagging (UST)"
-  type        = string
-  default     = null
-}
-
-variable "dd_env" {
-  description = "The task environment name. Used for tagging (UST)"
-  type        = string
-  default     = null
-}
-
-variable "dd_version" {
-  description = "The task version name. Used for tagging (UST)"
-  type        = string
-  default     = null
-}
 
 variable "dd_checks_cardinality" {
   description = "Datadog Agent checks cardinality"

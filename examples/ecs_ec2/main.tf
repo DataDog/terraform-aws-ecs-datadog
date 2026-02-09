@@ -17,11 +17,6 @@ module "datadog_agent" {
   dd_site         = var.dd_site
   dd_cluster_name = var.cluster_name
 
-  # Unified Service Tagging
-  dd_env     = var.environment
-  dd_service = "datadog-agent"
-  dd_version = "latest"
-
   # Enable all features
   dd_dogstatsd = {
     enabled                  = true

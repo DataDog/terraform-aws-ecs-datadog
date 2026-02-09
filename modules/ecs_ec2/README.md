@@ -87,7 +87,6 @@ resource "aws_ecs_task_definition" "app" {
     environment = concat(
       module.datadog_agent.dogstatsd_env_vars,
       module.datadog_agent.apm_env_vars,
-      module.datadog_agent.unified_service_tagging_env_vars,
       [
         {
           name  = "MY_APP_CONFIG"
@@ -111,7 +110,7 @@ The module provides these outputs for easy integration:
 - **`dd_agent_host_env_var`**: Single environment variable for `DD_AGENT_HOST`
 - **`dogstatsd_env_vars`**: Environment variables for DogStatsD (`DD_AGENT_HOST`, `DD_DOGSTATSD_PORT`)
 - **`apm_env_vars`**: Environment variables for APM (`DD_AGENT_HOST`, `DD_TRACE_AGENT_PORT`)
-- **`unified_service_tagging_env_vars`**: UST tags (`DD_ENV`, `DD_SERVICE`, `DD_VERSION`)
+
 
 ## Network Modes
 
@@ -435,7 +434,7 @@ No modules.
 | <a name="input_dd_docker_labels"></a> [dd\_docker\_labels](#input\_dd\_docker\_labels) | Datadog Agent container docker labels | `map(string)` | `{}` | no |
 | <a name="input_dd_docker_socket_path"></a> [dd\_docker\_socket\_path](#input\_dd\_docker\_socket\_path) | Path to Docker socket on the host. Defaults to /var/run/docker.sock | `string` | `"/var/run/docker.sock"` | no |
 | <a name="input_dd_dogstatsd"></a> [dd\_dogstatsd](#input\_dd\_dogstatsd) | Configuration for Datadog DogStatsD | <pre>object({<br/>    enabled                  = optional(bool, true)<br/>    origin_detection_enabled = optional(bool, true)<br/>    dogstatsd_cardinality    = optional(string, "orchestrator")<br/>  })</pre> | <pre>{<br/>  "dogstatsd_cardinality": "orchestrator",<br/>  "enabled": true,<br/>  "origin_detection_enabled": true<br/>}</pre> | no |
-| <a name="input_dd_env"></a> [dd\_env](#input\_dd\_env) | The task environment name. Used for tagging (UST) | `string` | `null` | no |
+
 | <a name="input_dd_environment"></a> [dd\_environment](#input\_dd\_environment) | Datadog Agent container environment variables. Highest precedence and overwrites other environment variables defined by the module. For example, `dd_environment = [ { name = 'DD_VAR', value = 'DD_VAL' } ]` | `list(map(string))` | <pre>[<br/>  {}<br/>]</pre> | no |
 | <a name="input_dd_essential"></a> [dd\_essential](#input\_dd\_essential) | Whether the Datadog Agent container is essential | `bool` | `false` | no |
 | <a name="input_dd_health_check"></a> [dd\_health\_check](#input\_dd\_health\_check) | Datadog Agent health check configuration | <pre>object({<br/>    command      = optional(list(string))<br/>    interval     = optional(number)<br/>    retries      = optional(number)<br/>    start_period = optional(number)<br/>    timeout      = optional(number)<br/>  })</pre> | <pre>{<br/>  "command": [<br/>    "CMD-SHELL",<br/>    "/probe.sh"<br/>  ],<br/>  "interval": 15,<br/>  "retries": 3,<br/>  "start_period": 60,<br/>  "timeout": 5<br/>}</pre> | no |
@@ -446,10 +445,8 @@ No modules.
 | <a name="input_dd_orchestrator_explorer"></a> [dd\_orchestrator\_explorer](#input\_dd\_orchestrator\_explorer) | Configuration for Datadog Orchestrator Explorer | <pre>object({<br/>    enabled = optional(bool, true)<br/>    url     = optional(string)<br/>  })</pre> | <pre>{<br/>  "enabled": true<br/>}</pre> | no |
 | <a name="input_dd_proc_path"></a> [dd\_proc\_path](#input\_dd\_proc\_path) | Path to /proc directory on the host. Defaults to /proc/ | `string` | `"/proc/"` | no |
 | <a name="input_dd_registry"></a> [dd\_registry](#input\_dd\_registry) | Datadog Agent image registry | `string` | `"public.ecr.aws/datadog/agent"` | no |
-| <a name="input_dd_service"></a> [dd\_service](#input\_dd\_service) | The task service name. Used for tagging (UST) | `string` | `null` | no |
 | <a name="input_dd_site"></a> [dd\_site](#input\_dd\_site) | Datadog Site | `string` | `"datadoghq.com"` | no |
 | <a name="input_dd_tags"></a> [dd\_tags](#input\_dd\_tags) | Datadog Agent global tags (eg. `key1:value1, key2:value2`) | `string` | `null` | no |
-| <a name="input_dd_version"></a> [dd\_version](#input\_dd\_version) | The task version name. Used for tagging (UST) | `string` | `null` | no |
 | <a name="input_enable_ecs_managed_tags"></a> [enable\_ecs\_managed\_tags](#input\_enable\_ecs\_managed\_tags) | Enable ECS managed tags for the daemon service | `bool` | `true` | no |
 | <a name="input_execution_role"></a> [execution\_role](#input\_execution\_role) | ARN of the task execution role that the Amazon ECS container agent and the Docker daemon can assume. Contains:<br/>  - `arn` (string): The ARN of the IAM role.<br/>  - `add_dd_ecs_permissions` (bool): Whether to automatically add Datadog ECS permissions to the role to fetch container and cluster metadata. | <pre>object({<br/>    arn                    = string<br/>    add_dd_ecs_permissions = optional(bool, true)<br/>  })</pre> | `null` | no |
 | <a name="input_family"></a> [family](#input\_family) | A unique name for your task definition | `string` | n/a | yes |
@@ -496,6 +493,5 @@ No modules.
 | <a name="output_tags_all"></a> [tags\_all](#output\_tags\_all) | Map of tags assigned to the resource, including inherited tags. |
 | <a name="output_task_role_arn"></a> [task\_role\_arn](#output\_task\_role\_arn) | ARN of IAM role that allows your Amazon ECS container task to make calls to other AWS services. |
 | <a name="output_track_latest"></a> [track\_latest](#output\_track\_latest) | Whether should track latest ACTIVE task definition on AWS or the one created with the resource stored in state. |
-| <a name="output_unified_service_tagging_env_vars"></a> [unified\_service\_tagging\_env\_vars](#output\_unified\_service\_tagging\_env\_vars) | Environment variables for Unified Service Tagging (UST) in user tasks. Only includes non-null values. |
 | <a name="output_volume"></a> [volume](#output\_volume) | Configuration block for volumes that containers in your task may use. |
 <!-- END_TF_DOCS -->

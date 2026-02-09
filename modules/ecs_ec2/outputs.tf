@@ -163,13 +163,4 @@ output "apm_env_vars" {
   ]
 }
 
-output "unified_service_tagging_env_vars" {
-  description = "Environment variables for Unified Service Tagging (UST) in user tasks. Only includes non-null values."
-  value = [
-    for pair in [
-      { name = "DD_ENV", value = var.dd_env },
-      { name = "DD_SERVICE", value = var.dd_service },
-      { name = "DD_VERSION", value = var.dd_version }
-    ] : { name = pair.name, value = pair.value } if pair.value != null
-  ]
-}
+
