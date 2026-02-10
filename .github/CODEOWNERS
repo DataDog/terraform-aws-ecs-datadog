@@ -3,4 +3,4 @@
 # and another the rest of the directory.
 
 # All your base
-*                   @DataDog/container-platform
+* @DataDog/container-platform @DataDog/ecs-experiences
