@@ -116,14 +116,6 @@ locals {
     {
       name  = "DD_APM_NON_LOCAL_TRAFFIC"
       value = var.dd_apm.enabled ? "true" : "false"
-    },
-    {
-      name  = "DD_DOGSTATSD_PORT"
-      value = "8125"
-    },
-    {
-      name  = "DD_APM_RECEIVER_PORT"
-      value = "8126"
     }
   ]
 
@@ -181,13 +173,13 @@ locals {
     ],
     length(var.dd_log_collection.container_include) > 0 ? [
       {
-        name  = "DD_CONTAINER_INCLUDE"
+        name  = "DD_CONTAINER_INCLUDE_LOGS"
         value = join(" ", var.dd_log_collection.container_include)
       }
     ] : [],
     length(var.dd_log_collection.container_exclude) > 0 ? [
       {
-        name  = "DD_CONTAINER_EXCLUDE"
+        name  = "DD_CONTAINER_EXCLUDE_LOGS"
         value = join(" ", var.dd_log_collection.container_exclude)
       }
     ] : []
