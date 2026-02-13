@@ -7,6 +7,17 @@
 # Datadog ECS EC2 Configuration
 ################################################################################
 
+variable "operating_system" {
+  description = "Operating system of the EC2 container instances. Currently only 'linux' is fully supported. Windows support is planned for a future release."
+  type        = string
+  default     = "linux"
+  nullable    = false
+  validation {
+    condition     = contains(["linux", "windows"], var.operating_system)
+    error_message = "operating_system must be 'linux' or 'windows'."
+  }
+}
+
 variable "dd_api_key" {
   description = "Datadog API Key"
   type        = string
@@ -218,7 +229,7 @@ variable "dd_proc_path" {
 }
 
 variable "dd_cgroup_path" {
-  description = "Path to cgroup directory on the host. Defaults to /sys/fs/cgroup/"
+  description = "Path to cgroup directory on the host. Defaults to /sys/fs/cgroup/. Use /cgroup/ for Amazon Linux 1 instances."
   type        = string
   default     = "/sys/fs/cgroup/"
   nullable    = false

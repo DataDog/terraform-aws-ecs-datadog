@@ -120,5 +120,11 @@ resource "aws_ecs_task_definition" "datadog_agent" {
       condition     = var.create_service == false || (var.create_service == true && var.cluster_arn != null)
       error_message = "cluster_arn must be provided when create_service is true."
     }
+
+    # Windows is not yet fully supported
+    precondition {
+      condition     = var.operating_system == "linux" || (var.dd_log_collection.enabled == false)
+      error_message = "Log collection is not supported on Windows. Please set dd_log_collection.enabled to false."
+    }
   }
 }
