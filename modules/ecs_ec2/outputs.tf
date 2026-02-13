@@ -127,40 +127,34 @@ output "service_desired_count" {
 # Helper Outputs for User Tasks
 ################################################################################
 
-output "dd_agent_host_env_var" {
-  description = "DD_AGENT_HOST environment variable for user task definitions. Use 169.254.170.2 (ECS metadata endpoint) for bridge mode."
-  value = {
-    name  = "DD_AGENT_HOST"
-    value = "169.254.170.2"
-  }
-}
-
 output "dogstatsd_env_vars" {
-  description = "Environment variables for DogStatsD configuration in user tasks. Ready to use in container definitions."
-  value = [
+  description = "Environment variables for DogStatsD in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD_AGENT_HOST dynamically via the EC2 metadata endpoint)."
+  value = local.is_dsd_socket_mount ? [
     {
-      name  = "DD_AGENT_HOST"
-      value = "169.254.170.2"
-    },
-    {
-      name  = "DD_DOGSTATSD_PORT"
-      value = "8125"
+      name  = "DD_DOGSTATSD_URL"
+      value = "unix:///var/run/datadog/dsd.socket"
     }
-  ]
+  ] : []
 }
 
 output "apm_env_vars" {
-  description = "Environment variables for APM configuration in user tasks. Ready to use in container definitions."
-  value = [
+  description = "Environment variables for APM in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD_AGENT_HOST dynamically via the EC2 metadata endpoint)."
+  value = local.is_apm_socket_mount ? [
     {
-      name  = "DD_AGENT_HOST"
-      value = "169.254.170.2"
-    },
-    {
-      name  = "DD_TRACE_AGENT_PORT"
-      value = "8126"
+      name  = "DD_TRACE_AGENT_URL"
+      value = "unix:///var/run/datadog/apm.socket"
     }
-  ]
+  ] : []
+}
+
+output "app_dd_sockets_mount" {
+  description = "Mount point for the shared UDS socket volume. Add this to your application container's mountPoints to enable communication with the Datadog Agent over Unix Domain Sockets."
+  value       = local.apm_dsd_mount
+}
+
+output "app_dd_sockets_volume" {
+  description = "Volume definition for the shared UDS socket volume. Add this to your application task definition's volumes to enable UDS communication with the Datadog Agent."
+  value       = local.apm_dsd_volume
 }
 
 output "profiling_env_vars" {

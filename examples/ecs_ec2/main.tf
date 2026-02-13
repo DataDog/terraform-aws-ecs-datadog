@@ -118,7 +118,7 @@ resource "aws_ecs_task_definition" "app" {
     image     = "nginx:latest"
     essential = true
 
-    # Use Datadog agent for monitoring
+    # Use Datadog agent for monitoring via UDS
     # Combine all Datadog environment variables using module outputs
     environment = concat(
       module.datadog_agent.dogstatsd_env_vars,
@@ -139,6 +139,9 @@ resource "aws_ecs_task_definition" "app" {
       ]
     )
 
+    # Mount the shared UDS socket volume for agent communication
+    mountPoints = module.datadog_agent.app_dd_sockets_mount
+
     portMappings = [{
       containerPort = 80
       hostPort      = 0 # Dynamic port mapping
@@ -157,6 +160,16 @@ resource "aws_ecs_task_definition" "app" {
     memory = 256
     cpu    = 256
   }])
+
+  # Add the shared UDS socket volume for agent communication
+  dynamic "volume" {
+    for_each = module.datadog_agent.app_dd_sockets_volume
+
+    content {
+      name      = volume.value.name
+      host_path = volume.value.host_path
+    }
+  }
 
   tags = var.tags
 }

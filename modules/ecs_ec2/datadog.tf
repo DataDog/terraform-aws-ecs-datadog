@@ -8,6 +8,30 @@ locals {
   is_linux = var.runtime_platform == null || try(var.runtime_platform.operating_system_family == null, true) || try(var.runtime_platform.operating_system_family == "LINUX", true)
 }
 
+# UDS (Unix Domain Socket) Configuration
+locals {
+  is_apm_socket_mount = var.dd_apm.enabled && var.dd_apm.socket_enabled && local.is_linux
+  is_dsd_socket_mount = var.dd_dogstatsd.enabled && var.dd_dogstatsd.socket_enabled && local.is_linux
+  is_apm_dsd_volume   = local.is_apm_socket_mount || local.is_dsd_socket_mount
+
+  # Volume for shared UDS sockets between agent and app containers
+  apm_dsd_volume = local.is_apm_dsd_volume ? [
+    {
+      name      = "dd-sockets"
+      host_path = "/var/run/datadog"
+    }
+  ] : []
+
+  # Mount point for the UDS socket volume (used by both agent and app containers)
+  apm_dsd_mount = local.is_apm_dsd_volume ? [
+    {
+      sourceVolume  = "dd-sockets"
+      containerPath = "/var/run/datadog"
+      readOnly      = false
+    }
+  ] : []
+}
+
 # Version and Install Info
 locals {
   # Datadog ECS task tags
@@ -93,6 +117,7 @@ locals {
   all_volumes = concat(
     local.dd_host_volumes,
     local.dd_log_volumes,
+    local.apm_dsd_volume,
     var.volumes
   )
 }
@@ -249,7 +274,7 @@ locals {
           }
         ]
 
-        mountPoints    = concat(local.dd_agent_mount, local.dd_log_mounts)
+        mountPoints    = concat(local.dd_agent_mount, local.dd_log_mounts, local.apm_dsd_mount)
         systemControls = []
         volumesFrom    = []
       },

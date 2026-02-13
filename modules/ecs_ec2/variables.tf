@@ -134,11 +134,13 @@ variable "dd_dogstatsd" {
     enabled                  = optional(bool, true)
     origin_detection_enabled = optional(bool, true)
     dogstatsd_cardinality    = optional(string, "orchestrator")
+    socket_enabled           = optional(bool, true)
   })
   default = {
     enabled                  = true
     origin_detection_enabled = true
     dogstatsd_cardinality    = "orchestrator"
+    socket_enabled           = true
   }
   validation {
     condition     = var.dd_dogstatsd != null
@@ -154,12 +156,14 @@ variable "dd_apm" {
   description = "Configuration for Datadog APM"
   type = object({
     enabled                       = optional(bool, true)
+    socket_enabled                = optional(bool, true)
     profiling                     = optional(bool, false)
     trace_inferred_proxy_services = optional(bool, false)
     data_streams                  = optional(bool, false)
   })
   default = {
     enabled                       = true
+    socket_enabled                = true
     profiling                     = false
     trace_inferred_proxy_services = false
     data_streams                  = false
