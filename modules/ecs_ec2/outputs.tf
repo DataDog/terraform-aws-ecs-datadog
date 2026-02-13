@@ -162,3 +162,33 @@ output "apm_env_vars" {
     }
   ]
 }
+
+output "profiling_env_vars" {
+  description = "Environment variables for profiling configuration in user application containers. Only includes values when enabled."
+  value = var.dd_apm.profiling ? [
+    {
+      name  = "DD_PROFILING_ENABLED"
+      value = "true"
+    }
+  ] : []
+}
+
+output "trace_inferred_proxy_env_vars" {
+  description = "Environment variables for trace inferred proxy services in user application containers. Only includes values when enabled."
+  value = var.dd_apm.trace_inferred_proxy_services ? [
+    {
+      name  = "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED"
+      value = "true"
+    }
+  ] : []
+}
+
+output "data_streams_env_vars" {
+  description = "Environment variables for Data Streams Monitoring in user application containers. Only includes values when enabled."
+  value = var.dd_apm.data_streams ? [
+    {
+      name  = "DD_DATA_STREAMS_ENABLED"
+      value = "true"
+    }
+  ] : []
+}

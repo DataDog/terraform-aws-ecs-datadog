@@ -39,6 +39,18 @@ locals {
     }
   ]
 
+  # Additional volumes required for log collection
+  dd_log_volumes = var.dd_log_collection.enabled ? [
+    {
+      name      = "pointdir"
+      host_path = "/opt/datadog-agent/run"
+    },
+    {
+      name      = "containers_root"
+      host_path = "/var/lib/docker/containers/"
+    }
+  ] : []
+
   # Container mount points for host volumes
   dd_agent_mount = [
     {
@@ -58,9 +70,24 @@ locals {
     }
   ]
 
+  # Additional mount points for log collection
+  dd_log_mounts = var.dd_log_collection.enabled ? [
+    {
+      sourceVolume  = "pointdir"
+      containerPath = "/opt/datadog-agent/run"
+      readOnly      = false
+    },
+    {
+      sourceVolume  = "containers_root"
+      containerPath = "/var/lib/docker/containers"
+      readOnly      = true
+    }
+  ] : []
+
   # Merge user-provided volumes with Datadog host volumes
   all_volumes = concat(
     local.dd_host_volumes,
+    local.dd_log_volumes,
     var.volumes
   )
 }
@@ -131,33 +158,13 @@ locals {
     }
   ] : []
 
-  # APM configuration variables
-  apm_vars = var.dd_apm.enabled ? concat(
-    [
-      {
-        name  = "DD_APM_ENABLED"
-        value = "true"
-      }
-    ],
-    var.dd_apm.profiling ? [
-      {
-        name  = "DD_PROFILING_ENABLED"
-        value = "true"
-      }
-    ] : [],
-    var.dd_apm.trace_inferred_proxy_services ? [
-      {
-        name  = "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED"
-        value = "true"
-      }
-    ] : [],
-    var.dd_apm.data_streams ? [
-      {
-        name  = "DD_DATA_STREAMS_ENABLED"
-        value = "true"
-      }
-    ] : []
-  ) : []
+  # APM configuration variables (agent-side only)
+  apm_vars = var.dd_apm.enabled ? [
+    {
+      name  = "DD_APM_ENABLED"
+      value = "true"
+    }
+  ] : []
 
   # Log collection configuration variables
   logs_vars = var.dd_log_collection.enabled ? concat(
@@ -237,7 +244,7 @@ locals {
           }
         ]
 
-        mountPoints    = local.dd_agent_mount
+        mountPoints    = concat(local.dd_agent_mount, local.dd_log_mounts)
         systemControls = []
         volumesFrom    = []
       },
