@@ -33,6 +33,16 @@ resource "aws_ecs_task_definition" "datadog_agent" {
     null
   )
 
+  # Runtime platform
+  dynamic "runtime_platform" {
+    for_each = var.runtime_platform != null ? [var.runtime_platform] : []
+
+    content {
+      cpu_architecture        = try(runtime_platform.value.cpu_architecture, null)
+      operating_system_family = try(runtime_platform.value.operating_system_family, null)
+    }
+  }
+
   # Placement constraints
   dynamic "placement_constraints" {
     for_each = var.placement_constraints != null ? var.placement_constraints : []
@@ -123,7 +133,7 @@ resource "aws_ecs_task_definition" "datadog_agent" {
 
     # Windows is not yet fully supported
     precondition {
-      condition     = var.operating_system == "linux" || (var.dd_log_collection.enabled == false)
+      condition     = local.is_linux || (var.dd_log_collection.enabled == false)
       error_message = "Log collection is not supported on Windows. Please set dd_log_collection.enabled to false."
     }
   }

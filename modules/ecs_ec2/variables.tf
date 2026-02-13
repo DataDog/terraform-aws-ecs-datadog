@@ -7,15 +7,13 @@
 # Datadog ECS EC2 Configuration
 ################################################################################
 
-variable "operating_system" {
-  description = "Operating system of the EC2 container instances. Currently only 'linux' is fully supported. Windows support is planned for a future release."
-  type        = string
-  default     = "linux"
-  nullable    = false
-  validation {
-    condition     = contains(["linux", "windows"], var.operating_system)
-    error_message = "operating_system must be 'linux' or 'windows'."
-  }
+variable "runtime_platform" {
+  description = "Configuration for the runtime platform of the ECS task. Used to determine OS-specific agent configuration. Currently only Linux is fully supported; Windows support is planned (EXP-242)."
+  type = object({
+    operating_system_family = optional(string, "LINUX")
+    cpu_architecture        = optional(string, "X86_64")
+  })
+  default = null
 }
 
 variable "dd_api_key" {
