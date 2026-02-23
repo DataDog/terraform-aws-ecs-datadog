@@ -111,7 +111,6 @@ The module provides these outputs for easy integration:
 - **`dogstatsd_env_vars`**: Environment variables for DogStatsD (`DD_AGENT_HOST`, `DD_DOGSTATSD_PORT`)
 - **`apm_env_vars`**: Environment variables for APM (`DD_AGENT_HOST`, `DD_TRACE_AGENT_PORT`)
 
-
 ## Network Modes
 
 ### Bridge Mode (Default, Recommended)
@@ -128,6 +127,7 @@ module "datadog_agent" {
 ```
 
 **How it works:**
+
 - Agent binds to host network interfaces
 - Application containers use `DD_AGENT_HOST=169.254.170.2` (ECS metadata endpoint)
 - Provides network isolation between containers
@@ -146,6 +146,7 @@ module "datadog_agent" {
 ```
 
 **How it works:**
+
 - Agent uses host network namespace
 - Application containers use `DD_AGENT_HOST=127.0.0.1`
 - Less network isolation
@@ -215,10 +216,12 @@ The module manages two IAM roles:
 Used by ECS to pull container images and access secrets.
 
 **Auto-created** if not provided. Includes:
+
 - `AmazonECSTaskExecutionRolePolicy` (AWS managed)
 - Secrets Manager access (if using `dd_api_key_secret`)
 
 **User-provided example:**
+
 ```hcl
 module "datadog_agent" {
   source = "DataDog/ecs-datadog/aws//modules/ecs_ec2"
@@ -237,6 +240,7 @@ module "datadog_agent" {
 Used by the Datadog Agent to query ECS and EC2 APIs.
 
 **Auto-created** if not provided. Includes permissions for:
+
 - `ecs:ListClusters`, `ecs:ListContainerInstances`, `ecs:DescribeContainerInstances`
 - `ecs:DescribeTasks`, `ecs:ListTasks`
 - `ec2:DescribeInstances`, `ec2:DescribeTags`
@@ -341,6 +345,7 @@ module "datadog_agent" {
 ## Complete Example
 
 See the [examples/ecs_ec2](../../examples/ecs_ec2) directory for a complete working example that includes:
+
 - Datadog Agent daemon service with all features enabled
 - Sample application task definition
 - ECS service for the application
@@ -367,27 +372,6 @@ See the [examples/ecs_ec2](../../examples/ecs_ec2) directory for a complete work
 2. **Check permissions**: Agent needs read access to Docker socket
 3. **Enable log collection**: Set `dd_log_collection.enabled = true`
 4. **Review agent configuration**: Check `DD_LOGS_ENABLED` environment variable
-
-## Requirements
-
-| Name | Version |
-|------|---------|
-| terraform | >= 1.5.0 |
-| aws | >= 5.85.0 |
-
-## Inputs
-
-See [variables.tf](./variables.tf) for a complete list of input variables.
-
-## Outputs
-
-See [outputs.tf](./outputs.tf) for a complete list of module outputs.
-
-## License
-
-Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
-This product includes software developed at Datadog (https://www.datadoghq.com/).
-Copyright 2025-present Datadog, Inc.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -426,17 +410,16 @@ No modules.
 | <a name="input_create_service"></a> [create\_service](#input\_create\_service) | Whether to create the ECS daemon service. If false, only the task definition is created. | `bool` | `true` | no |
 | <a name="input_dd_api_key"></a> [dd\_api\_key](#input\_dd\_api\_key) | Datadog API Key | `string` | `null` | no |
 | <a name="input_dd_api_key_secret"></a> [dd\_api\_key\_secret](#input\_dd\_api\_key\_secret) | Datadog API Key Secret ARN | <pre>object({<br/>    arn = string<br/>  })</pre> | `null` | no |
-| <a name="input_dd_apm"></a> [dd\_apm](#input\_dd\_apm) | Configuration for Datadog APM | <pre>object({<br/>    enabled                       = optional(bool, true)<br/>    profiling                     = optional(bool, false)<br/>    trace_inferred_proxy_services = optional(bool, false)<br/>    data_streams                  = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "data_streams": false,<br/>  "enabled": true,<br/>  "profiling": false,<br/>  "trace_inferred_proxy_services": false<br/>}</pre> | no |
-| <a name="input_dd_cgroup_path"></a> [dd\_cgroup\_path](#input\_dd\_cgroup\_path) | Path to cgroup directory on the host. Defaults to /sys/fs/cgroup/ | `string` | `"/sys/fs/cgroup/"` | no |
+| <a name="input_dd_apm"></a> [dd\_apm](#input\_dd\_apm) | Configuration for Datadog APM | <pre>object({<br/>    enabled                       = optional(bool, true)<br/>    socket_enabled                = optional(bool, true)<br/>    profiling                     = optional(bool, false)<br/>    trace_inferred_proxy_services = optional(bool, false)<br/>    data_streams                  = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "data_streams": false,<br/>  "enabled": true,<br/>  "profiling": false,<br/>  "socket_enabled": true,<br/>  "trace_inferred_proxy_services": false<br/>}</pre> | no |
+| <a name="input_dd_cgroup_path"></a> [dd\_cgroup\_path](#input\_dd\_cgroup\_path) | Path to cgroup directory on the host. Defaults to /sys/fs/cgroup/. Use /cgroup/ for Amazon Linux 1 instances. | `string` | `"/sys/fs/cgroup/"` | no |
 | <a name="input_dd_checks_cardinality"></a> [dd\_checks\_cardinality](#input\_dd\_checks\_cardinality) | Datadog Agent checks cardinality | `string` | `null` | no |
 | <a name="input_dd_cluster_name"></a> [dd\_cluster\_name](#input\_dd\_cluster\_name) | Datadog cluster name | `string` | `null` | no |
 | <a name="input_dd_cpu"></a> [dd\_cpu](#input\_dd\_cpu) | Datadog Agent container CPU units | `number` | `256` | no |
 | <a name="input_dd_docker_labels"></a> [dd\_docker\_labels](#input\_dd\_docker\_labels) | Datadog Agent container docker labels | `map(string)` | `{}` | no |
 | <a name="input_dd_docker_socket_path"></a> [dd\_docker\_socket\_path](#input\_dd\_docker\_socket\_path) | Path to Docker socket on the host. Defaults to /var/run/docker.sock | `string` | `"/var/run/docker.sock"` | no |
-| <a name="input_dd_dogstatsd"></a> [dd\_dogstatsd](#input\_dd\_dogstatsd) | Configuration for Datadog DogStatsD | <pre>object({<br/>    enabled                  = optional(bool, true)<br/>    origin_detection_enabled = optional(bool, true)<br/>    dogstatsd_cardinality    = optional(string, "orchestrator")<br/>  })</pre> | <pre>{<br/>  "dogstatsd_cardinality": "orchestrator",<br/>  "enabled": true,<br/>  "origin_detection_enabled": true<br/>}</pre> | no |
-
+| <a name="input_dd_dogstatsd"></a> [dd\_dogstatsd](#input\_dd\_dogstatsd) | Configuration for Datadog DogStatsD | <pre>object({<br/>    enabled                  = optional(bool, true)<br/>    origin_detection_enabled = optional(bool, true)<br/>    dogstatsd_cardinality    = optional(string, "orchestrator")<br/>    socket_enabled           = optional(bool, true)<br/>  })</pre> | <pre>{<br/>  "dogstatsd_cardinality": "orchestrator",<br/>  "enabled": true,<br/>  "origin_detection_enabled": true,<br/>  "socket_enabled": true<br/>}</pre> | no |
 | <a name="input_dd_environment"></a> [dd\_environment](#input\_dd\_environment) | Datadog Agent container environment variables. Highest precedence and overwrites other environment variables defined by the module. For example, `dd_environment = [ { name = 'DD_VAR', value = 'DD_VAL' } ]` | `list(map(string))` | <pre>[<br/>  {}<br/>]</pre> | no |
-| <a name="input_dd_essential"></a> [dd\_essential](#input\_dd\_essential) | Whether the Datadog Agent container is essential | `bool` | `false` | no |
+| <a name="input_dd_essential"></a> [dd\_essential](#input\_dd\_essential) | Whether the Datadog Agent container is essential | `bool` | `true` | no |
 | <a name="input_dd_health_check"></a> [dd\_health\_check](#input\_dd\_health\_check) | Datadog Agent health check configuration | <pre>object({<br/>    command      = optional(list(string))<br/>    interval     = optional(number)<br/>    retries      = optional(number)<br/>    start_period = optional(number)<br/>    timeout      = optional(number)<br/>  })</pre> | <pre>{<br/>  "command": [<br/>    "CMD-SHELL",<br/>    "/probe.sh"<br/>  ],<br/>  "interval": 15,<br/>  "retries": 3,<br/>  "start_period": 60,<br/>  "timeout": 5<br/>}</pre> | no |
 | <a name="input_dd_image_version"></a> [dd\_image\_version](#input\_dd\_image\_version) | Datadog Agent image version | `string` | `"latest"` | no |
 | <a name="input_dd_log_collection"></a> [dd\_log\_collection](#input\_dd\_log\_collection) | Configuration for Datadog Log Collection via the agent | <pre>object({<br/>    enabled               = optional(bool, false)<br/>    container_collect_all = optional(bool, true)<br/>    container_include     = optional(list(string), [])<br/>    container_exclude     = optional(list(string), [])<br/>  })</pre> | <pre>{<br/>  "enabled": false<br/>}</pre> | no |
@@ -456,6 +439,7 @@ No modules.
 | <a name="input_placement_constraints"></a> [placement\_constraints](#input\_placement\_constraints) | Configuration list for rules that are taken into consideration during task placement (up to max of 10) | <pre>list(object({<br/>    type       = string<br/>    expression = string<br/>  }))</pre> | `[]` | no |
 | <a name="input_propagate_tags"></a> [propagate\_tags](#input\_propagate\_tags) | Propagate tags from task definition or service to tasks. Valid values: TASK\_DEFINITION, SERVICE, NONE | `string` | `"SERVICE"` | no |
 | <a name="input_proxy_configuration"></a> [proxy\_configuration](#input\_proxy\_configuration) | Configuration for the App Mesh proxy | <pre>object({<br/>    container_name = string<br/>    properties     = map(any)<br/>    type           = optional(string, "APPMESH")<br/>  })</pre> | `null` | no |
+| <a name="input_runtime_platform"></a> [runtime\_platform](#input\_runtime\_platform) | Configuration for the runtime platform of the ECS task. Used to determine OS-specific agent configuration. Currently only Linux is fully supported; Windows support is planned (EXP-242). | <pre>object({<br/>    operating_system_family = optional(string, "LINUX")<br/>    cpu_architecture        = optional(string, "X86_64")<br/>  })</pre> | `null` | no |
 | <a name="input_service_name"></a> [service\_name](#input\_service\_name) | Name of the ECS daemon service. Defaults to '<family>-datadog-agent' | `string` | `null` | no |
 | <a name="input_service_placement_constraints"></a> [service\_placement\_constraints](#input\_service\_placement\_constraints) | Placement constraints for the daemon service (e.g., instance type, availability zone) | <pre>list(object({<br/>    type       = string<br/>    expression = optional(string)<br/>  }))</pre> | `[]` | no |
 | <a name="input_service_registries"></a> [service\_registries](#input\_service\_registries) | Service discovery registries for the daemon service | <pre>object({<br/>    registry_arn   = string<br/>    container_name = optional(string)<br/>    container_port = optional(number)<br/>  })</pre> | `null` | no |
@@ -469,18 +453,21 @@ No modules.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_apm_env_vars"></a> [apm\_env\_vars](#output\_apm\_env\_vars) | Environment variables for APM configuration in user tasks. Ready to use in container definitions. |
+| <a name="output_apm_env_vars"></a> [apm\_env\_vars](#output\_apm\_env\_vars) | Environment variables for APM in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD\_AGENT\_HOST dynamically via the EC2 metadata endpoint). |
+| <a name="output_app_dd_sockets_mount"></a> [app\_dd\_sockets\_mount](#output\_app\_dd\_sockets\_mount) | Mount point for the shared UDS socket volume. Add this to your application container's mountPoints to enable communication with the Datadog Agent over Unix Domain Sockets. |
+| <a name="output_app_dd_sockets_volume"></a> [app\_dd\_sockets\_volume](#output\_app\_dd\_sockets\_volume) | Volume definition for the shared UDS socket volume. Add this to your application task definition's volumes to enable UDS communication with the Datadog Agent. |
 | <a name="output_arn"></a> [arn](#output\_arn) | Full ARN of the Task Definition (including both family and revision). |
 | <a name="output_arn_without_revision"></a> [arn\_without\_revision](#output\_arn\_without\_revision) | ARN of the Task Definition with the trailing revision removed. |
 | <a name="output_container_definitions"></a> [container\_definitions](#output\_container\_definitions) | A list of valid container definitions provided as a single valid JSON document. |
-| <a name="output_dd_agent_host_env_var"></a> [dd\_agent\_host\_env\_var](#output\_dd\_agent\_host\_env\_var) | DD\_AGENT\_HOST environment variable for user task definitions. Use 169.254.170.2 (ECS metadata endpoint) for bridge mode. |
-| <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD configuration in user tasks. Ready to use in container definitions. |
+| <a name="output_data_streams_env_vars"></a> [data\_streams\_env\_vars](#output\_data\_streams\_env\_vars) | Environment variables for Data Streams Monitoring in user application containers. Only includes values when enabled. |
+| <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD\_AGENT\_HOST dynamically via the EC2 metadata endpoint). |
 | <a name="output_execution_role_arn"></a> [execution\_role\_arn](#output\_execution\_role\_arn) | ARN of the task execution role. |
 | <a name="output_family"></a> [family](#output\_family) | A unique name for your task definition. |
 | <a name="output_ipc_mode"></a> [ipc\_mode](#output\_ipc\_mode) | IPC resource namespace to be used for the containers. |
 | <a name="output_network_mode"></a> [network\_mode](#output\_network\_mode) | Docker networking mode to use for the containers. |
 | <a name="output_pid_mode"></a> [pid\_mode](#output\_pid\_mode) | Process namespace to use for the containers. |
 | <a name="output_placement_constraints"></a> [placement\_constraints](#output\_placement\_constraints) | Rules that are taken into consideration during task placement. |
+| <a name="output_profiling_env_vars"></a> [profiling\_env\_vars](#output\_profiling\_env\_vars) | Environment variables for profiling configuration in user application containers. Only includes values when enabled. |
 | <a name="output_proxy_configuration"></a> [proxy\_configuration](#output\_proxy\_configuration) | Configuration block for the App Mesh proxy. |
 | <a name="output_requires_compatibilities"></a> [requires\_compatibilities](#output\_requires\_compatibilities) | Set of launch types required by the task. |
 | <a name="output_revision"></a> [revision](#output\_revision) | Revision of the task in a particular family. |
@@ -492,6 +479,7 @@ No modules.
 | <a name="output_tags"></a> [tags](#output\_tags) | Key-value map of resource tags. |
 | <a name="output_tags_all"></a> [tags\_all](#output\_tags\_all) | Map of tags assigned to the resource, including inherited tags. |
 | <a name="output_task_role_arn"></a> [task\_role\_arn](#output\_task\_role\_arn) | ARN of IAM role that allows your Amazon ECS container task to make calls to other AWS services. |
+| <a name="output_trace_inferred_proxy_env_vars"></a> [trace\_inferred\_proxy\_env\_vars](#output\_trace\_inferred\_proxy\_env\_vars) | Environment variables for trace inferred proxy services in user application containers. Only includes values when enabled. |
 | <a name="output_track_latest"></a> [track\_latest](#output\_track\_latest) | Whether should track latest ACTIVE task definition on AWS or the one created with the resource stored in state. |
 | <a name="output_volume"></a> [volume](#output\_volume) | Configuration block for volumes that containers in your task may use. |
 <!-- END_TF_DOCS -->
