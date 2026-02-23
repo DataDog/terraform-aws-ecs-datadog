@@ -184,5 +184,186 @@ resource "aws_ecs_service" "app" {
   # Ensure Datadog agent daemon is deployed before application tasks
   depends_on = [module.datadog_agent]
 
+  force_new_deployment = true
+  launch_type          = "EC2"
+
+  tags = var.tags
+}
+
+################################################################################
+# DogStatsD Example Application
+################################################################################
+
+# CloudWatch log group for dogstatsd app
+resource "aws_cloudwatch_log_group" "dogstatsd_app" {
+  name              = "/ecs/${var.name_prefix}-dogstatsd-app"
+  retention_in_days = 7
+
+  tags = var.tags
+}
+
+# DogStatsD application task definition
+resource "aws_ecs_task_definition" "dogstatsd_app" {
+  family             = "${var.name_prefix}-dogstatsd-app"
+  network_mode       = "bridge"
+  task_role_arn      = aws_iam_role.app_task_role.arn
+  execution_role_arn = aws_iam_role.app_execution_role.arn
+
+  container_definitions = jsonencode([{
+    name      = "dogstatsd-app"
+    image     = "ghcr.io/datadog/apps-dogstatsd:main"
+    essential = true
+
+    # Use Datadog agent for monitoring via UDS
+    environment = concat(
+      module.datadog_agent.dogstatsd_env_vars,
+      [
+        {
+          name  = "DD_SERVICE"
+          value = "dogstatsd-app"
+        },
+        {
+          name  = "DD_ENV"
+          value = var.environment
+        },
+        {
+          name  = "DD_VERSION"
+          value = "1.0.0"
+        }
+      ]
+    )
+
+    # Mount the shared UDS socket volume for agent communication
+    mountPoints = module.datadog_agent.app_dd_sockets_mount
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.dogstatsd_app.name
+        awslogs-region        = var.region
+        awslogs-stream-prefix = "dogstatsd-app"
+      }
+    }
+
+    memory = 256
+    cpu    = 256
+  }])
+
+  # Add the shared UDS socket volume for agent communication
+  dynamic "volume" {
+    for_each = module.datadog_agent.app_dd_sockets_volume
+
+    content {
+      name      = volume.value.name
+      host_path = volume.value.host_path
+    }
+  }
+
+  tags = var.tags
+}
+
+# DogStatsD ECS service
+resource "aws_ecs_service" "dogstatsd_app" {
+  name            = "${var.name_prefix}-dogstatsd-app"
+  cluster         = var.cluster_arn
+  task_definition = aws_ecs_task_definition.dogstatsd_app.arn
+  desired_count   = 1
+
+  # Ensure Datadog agent daemon is deployed before application tasks
+  depends_on = [module.datadog_agent]
+
+  force_new_deployment = true
+  launch_type          = "EC2"
+
+  tags = var.tags
+}
+
+################################################################################
+# Trace Generator Example Application
+################################################################################
+
+# CloudWatch log group for tracegen app
+resource "aws_cloudwatch_log_group" "tracegen_app" {
+  name              = "/ecs/${var.name_prefix}-tracegen-app"
+  retention_in_days = 7
+
+  tags = var.tags
+}
+
+# Trace generator application task definition
+resource "aws_ecs_task_definition" "tracegen_app" {
+  family             = "${var.name_prefix}-tracegen-app"
+  network_mode       = "bridge"
+  task_role_arn      = aws_iam_role.app_task_role.arn
+  execution_role_arn = aws_iam_role.app_execution_role.arn
+
+  # Note: this dummy app generates a custom metric called
+  # `custom.metric` with the custom tag `series`.
+  container_definitions = jsonencode([{
+    name      = "tracegen-app"
+    image     = "ghcr.io/datadog/apps-tracegen:main"
+    essential = true
+
+    # Use Datadog agent for monitoring via UDS
+    environment = concat(
+      module.datadog_agent.apm_env_vars,
+      [
+        {
+          name  = "DD_SERVICE"
+          value = "tracegen-app"
+        },
+        {
+          name  = "DD_ENV"
+          value = var.environment
+        },
+        {
+          name  = "DD_VERSION"
+          value = "1.0.0"
+        }
+      ]
+    )
+
+    # Mount the shared UDS socket volume for agent communication
+    mountPoints = module.datadog_agent.app_dd_sockets_mount
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.tracegen_app.name
+        awslogs-region        = var.region
+        awslogs-stream-prefix = "tracegen-app"
+      }
+    }
+
+    memory = 256
+    cpu    = 256
+  }])
+
+  # Add the shared UDS socket volume for agent communication
+  dynamic "volume" {
+    for_each = module.datadog_agent.app_dd_sockets_volume
+
+    content {
+      name      = volume.value.name
+      host_path = volume.value.host_path
+    }
+  }
+
+  tags = var.tags
+}
+
+# Trace generator ECS service
+resource "aws_ecs_service" "tracegen_app" {
+  name            = "${var.name_prefix}-tracegen-app"
+  cluster         = var.cluster_arn
+  task_definition = aws_ecs_task_definition.tracegen_app.arn
+  desired_count   = 1
+
+  # Ensure Datadog agent daemon is deployed before application tasks
+  depends_on = [module.datadog_agent]
+
+  force_new_deployment = true
+  launch_type          = "EC2"
+
   tags = var.tags
 }

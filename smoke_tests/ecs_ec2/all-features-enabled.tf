@@ -10,9 +10,6 @@ module "all_features" {
   dd_api_key      = "test-api-key"
   dd_site         = "datadoghq.com"
   dd_cluster_name = "test-cluster"
-  dd_env          = "test"
-  dd_service      = "test-service"
-  dd_version      = "1.0.0"
 
   dd_dogstatsd = {
     enabled                  = true
