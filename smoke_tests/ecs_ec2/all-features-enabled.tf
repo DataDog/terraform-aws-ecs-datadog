@@ -7,8 +7,8 @@
 module "all_features" {
   source = "../../modules/ecs_ec2"
 
-  dd_api_key      = "test-api-key"
-  dd_site         = "datadoghq.com"
+  dd_api_key      = var.dd_api_key
+  dd_site         = var.dd_site
   dd_cluster_name = "test-cluster"
 
   dd_dogstatsd = {
@@ -33,7 +33,7 @@ module "all_features" {
     enabled = true
   }
 
-  family         = "smoke-test-all-features"
+  family         = "${var.test_prefix}-all-features"
   create_service = false
 
   tags = {

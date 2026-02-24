@@ -7,9 +7,9 @@
 module "host_mode" {
   source = "../../modules/ecs_ec2"
 
-  dd_api_key   = "test-api-key"
-  dd_site      = "datadoghq.com"
-  family       = "smoke-test-host-mode"
+  dd_api_key   = var.dd_api_key
+  dd_site      = var.dd_site
+  family       = "${var.test_prefix}-host-mode"
   network_mode = "host"
 
   create_service = false

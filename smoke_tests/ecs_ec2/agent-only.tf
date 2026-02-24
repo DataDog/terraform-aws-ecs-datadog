@@ -7,9 +7,9 @@
 module "agent_only" {
   source = "../../modules/ecs_ec2"
 
-  dd_api_key     = "test-api-key"
-  dd_site        = "datadoghq.com"
-  family         = "smoke-test-agent-only"
+  dd_api_key     = var.dd_api_key
+  dd_site        = var.dd_site
+  family         = "${var.test_prefix}-agent-only"
   create_service = false
 
   tags = {
