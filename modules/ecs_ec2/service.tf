@@ -22,6 +22,7 @@ resource "aws_ecs_service" "datadog_agent" {
   task_definition = aws_ecs_task_definition.datadog_agent.arn
 
   # Daemon scheduling strategy - one agent per EC2 instance
+  launch_type         = "EC2"
   scheduling_strategy = "DAEMON"
 
   # Placement constraints
