@@ -17,7 +17,7 @@ Unlike the Fargate module which deploys the agent as a sidecar container in each
 - Host process information (`/proc`)
 - Cgroup metrics (`/sys/fs/cgroup`)
 
-Application containers communicate with the agent over the network (DogStatsD on port 8125, APM on port 8126) instead of using Unix domain sockets.
+By default, application containers communicate with the agent over **Unix Domain Sockets (UDS)** via a shared volume mount. Port-based communication (DogStatsD on port 8125, APM on port 8126) is available as a fallback when UDS is disabled.
 
 ## Quick Start
 
@@ -72,12 +72,20 @@ resource "aws_ecs_service" "datadog_agent" {
 
 Your application tasks need to be configured to send metrics and traces to the Datadog Agent daemon. The module provides helper outputs to make this easy.
 
-### Example: Application Task with DogStatsD and APM
+### Example: Application Task with DogStatsD and APM (UDS)
+
+By default, UDS is enabled. Your application task needs a shared volume mount and the appropriate environment variables:
 
 ```hcl
 resource "aws_ecs_task_definition" "app" {
   family       = "my-app"
   network_mode = "bridge"
+
+  # Add the shared UDS socket volume
+  volume {
+    name      = module.datadog_agent.app_dd_sockets_volume.name
+    host_path = module.datadog_agent.app_dd_sockets_volume.host_path
+  }
 
   container_definitions = jsonencode([{
     name  = "app"
@@ -95,6 +103,9 @@ resource "aws_ecs_task_definition" "app" {
       ]
     )
 
+    # Mount the shared UDS socket directory
+    mountPoints = [module.datadog_agent.app_dd_sockets_mount]
+
     portMappings = [{
       containerPort = 8080
       protocol      = "tcp"
@@ -107,9 +118,13 @@ resource "aws_ecs_task_definition" "app" {
 
 The module provides these outputs for easy integration:
 
-- **`dd_agent_host_env_var`**: Single environment variable for `DD_AGENT_HOST`
-- **`dogstatsd_env_vars`**: Environment variables for DogStatsD (`DD_AGENT_HOST`, `DD_DOGSTATSD_PORT`)
-- **`apm_env_vars`**: Environment variables for APM (`DD_AGENT_HOST`, `DD_TRACE_AGENT_PORT`)
+- **`dogstatsd_env_vars`**: Environment variables for DogStatsD (sets `DD_DOGSTATSD_URL` to the UDS socket path when enabled)
+- **`apm_env_vars`**: Environment variables for APM (sets `DD_TRACE_AGENT_URL` to the UDS socket path when enabled)
+- **`app_dd_sockets_volume`**: Volume definition for the shared UDS socket directory — add to your task definition's `volume` blocks
+- **`app_dd_sockets_mount`**: Mount point for the shared UDS socket directory — add to your application container's `mountPoints`
+- **`profiling_env_vars`**: Environment variables for continuous profiling (when enabled)
+- **`data_streams_env_vars`**: Environment variables for Data Streams Monitoring (when enabled)
+- **`trace_inferred_proxy_env_vars`**: Environment variables for trace inferred proxy services (when enabled)
 
 ## Network Modes
 
@@ -128,8 +143,8 @@ module "datadog_agent" {
 
 **How it works:**
 
-- Agent binds to host network interfaces
-- Application containers use `DD_AGENT_HOST=169.254.170.2` (ECS metadata endpoint)
+- Agent communicates with application containers via **UDS** (default) through a shared socket volume
+- When UDS is disabled, application containers use port-based communication with `DD_AGENT_HOST` set to the EC2 metadata endpoint
 - Provides network isolation between containers
 
 ### Host Mode (Alternative)
@@ -362,8 +377,8 @@ See the [examples/ecs_ec2](../../examples/ecs_ec2) directory for a complete work
 ### Metrics Not Appearing
 
 1. **Verify agent is running**: Check ECS service status
-2. **Check application configuration**: Ensure `DD_AGENT_HOST` is set correctly
-3. **Network connectivity**: Verify security groups allow traffic on ports 8125 and 8126
+2. **Check application configuration**: Ensure UDS socket volume is mounted and `DD_DOGSTATSD_URL` / `DD_TRACE_AGENT_URL` are set (or `DD_AGENT_HOST` if using port-based communication)
+3. **Socket mount**: Verify the shared socket volume is present in both the agent and application task definitions
 4. **Review agent logs**: Check for connection errors
 
 ### Log Collection Not Working

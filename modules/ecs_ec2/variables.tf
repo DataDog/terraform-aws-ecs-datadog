@@ -20,6 +20,7 @@ variable "dd_api_key" {
   description = "Datadog API Key"
   type        = string
   default     = null
+  sensitive   = true
 }
 
 variable "dd_api_key_secret" {

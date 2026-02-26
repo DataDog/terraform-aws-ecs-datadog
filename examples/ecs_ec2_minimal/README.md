@@ -58,18 +58,21 @@ This example demonstrates the simplest possible deployment of the Datadog Agent 
 
 After deploying the agent:
 
-1. Configure your application tasks to send metrics to the agent:
+1. Configure your application tasks to communicate with the agent over UDS (the default):
    ```hcl
-   environment = [
-     {
-       name  = "DD_AGENT_HOST"
-       value = "169.254.170.2"
-     },
-     {
-       name  = "DD_DOGSTATSD_PORT"
-       value = "8125"
-     }
-   ]
+   # Add the shared UDS socket volume to your task definition
+   volume {
+     name      = module.datadog_agent.app_dd_sockets_volume.name
+     host_path = module.datadog_agent.app_dd_sockets_volume.host_path
+   }
+
+   # In your container definition, add the mount and env vars
+   mountPoints = [module.datadog_agent.app_dd_sockets_mount]
+
+   environment = concat(
+     module.datadog_agent.dogstatsd_env_vars,
+     module.datadog_agent.apm_env_vars,
+   )
    ```
 
 2. For more advanced configuration, see the [full example](../ecs_ec2/)
