@@ -21,6 +21,7 @@ type ECSFargateSuite struct {
 	testPrefix       string
 }
 
+// TODO: Separate tests into different package for each tf module
 // TestECSFargateSuite is the entry point for the test suite
 func TestECSFargateSuite(t *testing.T) {
 	suite.Run(t, new(ECSFargateSuite))
