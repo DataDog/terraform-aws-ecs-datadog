@@ -196,6 +196,14 @@ locals {
     }
   ] : []
 
+  # Process collection configuration variables
+  process_vars = var.dd_process_collection.enabled ? [
+    {
+      name  = "DD_PROCESS_AGENT_ENABLED"
+      value = "true"
+    }
+  ] : []
+
   # Log collection configuration variables
   logs_vars = var.dd_log_collection.enabled ? concat(
     [
@@ -232,6 +240,7 @@ locals {
     local.ec2_env,
     local.origin_detection_vars,
     local.apm_vars,
+    local.process_vars,
     local.logs_vars,
     local.dd_environment,
   )

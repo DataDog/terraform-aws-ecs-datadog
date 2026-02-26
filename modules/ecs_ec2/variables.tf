@@ -207,6 +207,20 @@ variable "dd_orchestrator_explorer" {
   }
 }
 
+variable "dd_process_collection" {
+  description = "Configuration for Datadog Live Process collection"
+  type = object({
+    enabled = optional(bool, false)
+  })
+  default = {
+    enabled = false
+  }
+  validation {
+    condition     = var.dd_process_collection != null
+    error_message = "The Datadog Process Collection configuration must be defined."
+  }
+}
+
 variable "dd_log_level" {
   description = "Set logging verbosity for Datadog agent. Valid values: trace, debug, info, warn, error, critical, off"
   type        = string

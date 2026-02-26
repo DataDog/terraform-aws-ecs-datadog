@@ -222,6 +222,20 @@ module "datadog_agent" {
 }
 ```
 
+### Live Process Collection
+
+```hcl
+module "datadog_agent" {
+  source = "DataDog/ecs-datadog/aws//modules/ecs_ec2"
+
+  # ... other config ...
+
+  dd_process_collection = {
+    enabled = true
+  }
+}
+```
+
 ## IAM Roles
 
 The module manages two IAM roles:
