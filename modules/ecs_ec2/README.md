@@ -456,6 +456,7 @@ No modules.
 | <a name="input_dd_memory_limit_mib"></a> [dd\_memory\_limit\_mib](#input\_dd\_memory\_limit\_mib) | Datadog Agent container memory limit in MiB | `number` | `512` | no |
 | <a name="input_dd_orchestrator_explorer"></a> [dd\_orchestrator\_explorer](#input\_dd\_orchestrator\_explorer) | Configuration for Datadog Orchestrator Explorer | <pre>object({<br/>    enabled = optional(bool, true)<br/>    url     = optional(string)<br/>  })</pre> | <pre>{<br/>  "enabled": true<br/>}</pre> | no |
 | <a name="input_dd_proc_path"></a> [dd\_proc\_path](#input\_dd\_proc\_path) | Path to /proc directory on the host. Defaults to /proc/ | `string` | `"/proc/"` | no |
+| <a name="input_dd_process_collection"></a> [dd\_process\_collection](#input\_dd\_process\_collection) | Configuration for Datadog Live Process collection | <pre>object({<br/>    enabled = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "enabled": false<br/>}</pre> | no |
 | <a name="input_dd_registry"></a> [dd\_registry](#input\_dd\_registry) | Datadog Agent image registry | `string` | `"public.ecr.aws/datadog/agent"` | no |
 | <a name="input_dd_site"></a> [dd\_site](#input\_dd\_site) | Datadog Site | `string` | `"datadoghq.com"` | no |
 | <a name="input_dd_tags"></a> [dd\_tags](#input\_dd\_tags) | Datadog Agent global tags (eg. `key1:value1, key2:value2`) | `string` | `null` | no |
