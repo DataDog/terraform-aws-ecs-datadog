@@ -39,11 +39,6 @@ module "datadog_agent" {
 
   # Daemon Service
   cluster_arn = "arn:aws:ecs:us-east-1:123456789012:cluster/my-cluster"
-
-  tags = {
-    Environment = "production"
-    Team        = "platform"
-  }
 }
 ```
 
@@ -67,6 +62,20 @@ resource "aws_ecs_service" "datadog_agent" {
   scheduling_strategy = "DAEMON"
 }
 ```
+
+## Configuration
+
+### API Keys
+
+To ensure the Datadog Agent operates correctly, a Datadog API key is required. You can generate one by following the instructions in [Generate an API Key](https://docs.datadoghq.com/cloudcraft/getting-started/generate-api-key/). The API key can be supplied either directly as plaintext using the `dd_api_key` argument, or securely via the `dd_api_key_secret` argument, which should reference the ARN of an AWS Secrets Manager secret containing the plaintext key. The module automatically grants the necessary permissions to the ECS task execution role to retrieve the key from Secrets Manager and inject it as an environment variable into the Datadog Agent container.
+
+### Datadog Site
+
+The default Datadog site is `datadoghq.com`. To use a different site set the `dd_site` input variable to the desired destination site. See [Getting Started with Datadog Sites](https://docs.datadoghq.com/getting_started/site/) for the available site values.
+
+### Datadog Agent Configuration
+
+All of the input variables prefixed with `dd` are related to Datadog configuration. In order to further customize the Datadog agent configuration beyond the provided interface in this module, you can use the `dd_environment` input argument to customize the Agent configuration. **Note** that `dd_environment` overwrites any other environment variables with the same keys defined. For more information on Datadog configuration, reference [Amazon ECS](https://docs.datadoghq.com/containers/amazon_ecs/) Datadog documentation.
 
 ## User Task Configuration
 
@@ -216,8 +225,6 @@ module "datadog_agent" {
   dd_log_collection = {
     enabled               = true
     container_collect_all = true
-    container_include     = []  # Optional: specific container names
-    container_exclude     = []  # Optional: exclude container names
   }
 }
 ```
@@ -306,23 +313,6 @@ module "datadog_agent" {
 }
 ```
 
-### Service Discovery
-
-Register the agent with AWS Cloud Map:
-
-```hcl
-module "datadog_agent" {
-  source = "DataDog/ecs-datadog/aws//modules/ecs_ec2"
-
-  # ... other config ...
-
-  service_registries = {
-    registry_arn   = aws_service_discovery_service.datadog.arn
-    container_name = "datadog-agent"
-  }
-}
-```
-
 ## Advanced Configuration
 
 ### Custom Volume Paths
@@ -338,18 +328,6 @@ module "datadog_agent" {
   dd_docker_socket_path = "/var/run/docker.sock"
   dd_proc_path          = "/proc/"
   dd_cgroup_path        = "/sys/fs/cgroup/"
-}
-```
-
-### Logging Verbosity
-
-```hcl
-module "datadog_agent" {
-  source = "DataDog/ecs-datadog/aws//modules/ecs_ec2"
-
-  # ... other config ...
-
-  dd_log_level = "debug"  # trace, debug, info, warn, error, critical, off
 }
 ```
 
