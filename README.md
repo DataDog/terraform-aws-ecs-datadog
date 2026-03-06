@@ -6,7 +6,9 @@ Use this [Terraform module](https://registry.terraform.io/modules/DataDog/ecs-da
 
 This Terraform module wraps the [aws_ecs_task_definition](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) resource and automatically configures your task definition for Datadog monitoring.
 
-For more information on the ECS Fargate module, reference the submodule [documentation](https://github.com/DataDog/terraform-ecs-datadog/blob/main/modules/ecs_fargate/README.md).
+For more information on the ECS Fargate module, reference the submodule [documentation](https://github.com/DataDog/terraform-aws-ecs-datadog/blob/main/modules/ecs_fargate/README.md).
+
+For more information on the ECS on EC2 module, reference the submodule [documentation](https://github.com/DataDog/terraform-aws-ecs-datadog/blob/main/modules/ecs_ec2/README.md).
 
 If you encounter any issues, please open a GitHub issue to let us know.
 
@@ -32,5 +34,26 @@ module "datadog_ecs_fargate_task" {
       image     = "ghcr.io/datadog/apps-dogstatsd:main",
     }
   ])
+}
+```
+
+### ECS on EC2
+
+```hcl
+module "datadog_agent" {
+  source  = "DataDog/ecs-datadog/aws//modules/ecs_ec2"
+
+  # Datadog Configuration
+  dd_api_key_secret = {
+    arn = "arn:aws:secretsmanager:us-east-1:0000000000:secret:example-secret"
+  }
+  dd_tags = "team:ecs-xp, owner:container-monitoring"
+  dd_cluster_name = "my-ecs-cluster"
+
+  # Task Definition
+  family = "datadog-agent-daemon"
+
+  # Daemon Service
+  cluster_arn = "arn:aws:ecs:us-east-1:0000000000:cluster/my-cluster"
 }
 ```

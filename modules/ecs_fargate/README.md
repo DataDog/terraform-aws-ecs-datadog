@@ -186,7 +186,7 @@ resource "datadog_ecs_fargate_task" "example" {
 
 #### API Keys
 
-To ensure the Datadog Agent operates correctly, a Datadog API key is required. You can generate one by following the instructions in [Generate an API Key](https://docs.datadoghq.com/cloudcraft/getting-started/generate-api-key/). The API key can be supplied either directly as plaintext using the `dd_api_key` argument, or securely via the `dd_api_key_secret_arn` argument, which should reference the ARN of an AWS Secrets Manager secret containing the plaintext key. The module automatically grants the necessary permissions to the ECS task execution role to retrieve the key from Secrets Manager and inject it as an environment variable into the Datadog Agent container.
+To ensure the Datadog Agent operates correctly, a Datadog API key is required. You can generate one by following the instructions in [Generate an API Key](https://docs.datadoghq.com/account_management/api-app-keys/). The API key can be supplied either directly as plaintext using the `dd_api_key` argument, or securely via the `dd_api_key_secret_arn` argument, which should reference the ARN of an AWS Secrets Manager secret containing the plaintext key. The module automatically grants the necessary permissions to the ECS task execution role to retrieve the key from Secrets Manager and inject it as an environment variable into the Datadog Agent container.
 
 #### Selecting the Datadog Site
 
