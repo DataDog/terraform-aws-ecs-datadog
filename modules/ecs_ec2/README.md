@@ -1,5 +1,8 @@
 # ECS on EC2 Module for Datadog Agent
 
+> **Technical Preview**: This module is in technical preview. While it is functional, we recommend validating it in your environment before widespread use.
+> If you encounter any issues, please open a GitHub issue to let us know.
+
 This Terraform module deploys the Datadog Agent as a **daemon service** on Amazon ECS clusters running on EC2 instances. The daemon scheduling strategy ensures that one Datadog Agent runs on each EC2 instance in your cluster, providing comprehensive monitoring for all containers on that instance.
 
 ## Key Features
