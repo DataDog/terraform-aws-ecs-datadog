@@ -48,7 +48,6 @@ module "datadog_agent" {
     arn = "arn:aws:secretsmanager:us-east-1:0000000000:secret:example-secret"
   }
   dd_tags = "team:ecs-xp, owner:container-monitoring"
-  dd_cluster_name = "my-ecs-cluster"
 
   # Task Definition
   family = "datadog-agent-daemon"

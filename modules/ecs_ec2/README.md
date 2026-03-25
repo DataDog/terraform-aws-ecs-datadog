@@ -34,8 +34,7 @@ module "datadog_agent" {
   dd_api_key_secret = {
     arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:datadog-api-key"
   }
-  dd_site         = "datadoghq.com"
-  dd_cluster_name = "my-ecs-cluster"
+  dd_site = "datadoghq.com"
 
   # Task Definition
   family = "datadog-agent-daemon"
@@ -423,7 +422,6 @@ No modules.
 | <a name="input_dd_apm"></a> [dd\_apm](#input\_dd\_apm) | Configuration for Datadog APM | <pre>object({<br/>    enabled                       = optional(bool, true)<br/>    socket_enabled                = optional(bool, true)<br/>    profiling                     = optional(bool, false)<br/>    trace_inferred_proxy_services = optional(bool, false)<br/>    data_streams                  = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "data_streams": false,<br/>  "enabled": true,<br/>  "profiling": false,<br/>  "socket_enabled": true,<br/>  "trace_inferred_proxy_services": false<br/>}</pre> | no |
 | <a name="input_dd_cgroup_path"></a> [dd\_cgroup\_path](#input\_dd\_cgroup\_path) | Path to cgroup directory on the host. Defaults to /sys/fs/cgroup/. Use /cgroup/ for Amazon Linux 1 instances. | `string` | `"/sys/fs/cgroup/"` | no |
 | <a name="input_dd_checks_cardinality"></a> [dd\_checks\_cardinality](#input\_dd\_checks\_cardinality) | Datadog Agent checks cardinality | `string` | `null` | no |
-| <a name="input_dd_cluster_name"></a> [dd\_cluster\_name](#input\_dd\_cluster\_name) | Datadog cluster name | `string` | `null` | no |
 | <a name="input_dd_cpu"></a> [dd\_cpu](#input\_dd\_cpu) | Datadog Agent container CPU units | `number` | `256` | no |
 | <a name="input_dd_docker_labels"></a> [dd\_docker\_labels](#input\_dd\_docker\_labels) | Datadog Agent container docker labels | `map(string)` | `{}` | no |
 | <a name="input_dd_docker_socket_path"></a> [dd\_docker\_socket\_path](#input\_dd\_docker\_socket\_path) | Path to Docker socket on the host. Defaults to /var/run/docker.sock | `string` | `"/var/run/docker.sock"` | no |

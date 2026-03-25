@@ -49,7 +49,6 @@ Before running this example, you need:
 
    Create a `terraform.tfvars` file:
    ```hcl
-   cluster_name           = "my-ecs-cluster"
    cluster_arn            = "arn:aws:ecs:us-east-1:123456789012:cluster/my-ecs-cluster"
    dd_api_key_secret_arn  = "arn:aws:secretsmanager:us-east-1:123456789012:secret:datadog-api-key-AbCdEf"
    dd_site                = "datadoghq.com"

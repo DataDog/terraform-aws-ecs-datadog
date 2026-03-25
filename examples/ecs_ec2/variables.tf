@@ -15,11 +15,6 @@ variable "name_prefix" {
   default     = "dd-ecs-ec2-example"
 }
 
-variable "cluster_name" {
-  description = "Name of the ECS cluster"
-  type        = string
-}
-
 variable "cluster_arn" {
   description = "ARN of the ECS cluster"
   type        = string
