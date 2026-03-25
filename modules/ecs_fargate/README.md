@@ -194,7 +194,7 @@ The default Datadog site is `datadoghq.com`. To use a different site set the `DD
 
 #### Datadog Configuration
 
-All of the input variables prefixed with `dd` are related to Datadog configuration. In order to further customize the Datadog agent configuration beyond the provided interface in this module, you can use the `dd_environment_variables` input argument to customize the Agent configuration. **Note** that `dd_environment_variables` overwrites any other environment variables with the same keys defined. For more information on Datadog configuration, reference [Amazon ECS on AWS Fargate](https://docs.datadoghq.com/integrations/ecs_fargate/?tab=webui) Datadog documentation.
+All of the input variables prefixed with `dd` are related to Datadog configuration. In order to further customize the Datadog agent configuration beyond the provided interface in this module, you can use the `dd_environment` input argument to customize the Agent configuration. **Note** that `dd_environment` overwrites any other environment variables with the same keys defined. For more information on Datadog configuration, reference [Amazon ECS on AWS Fargate](https://docs.datadoghq.com/integrations/ecs_fargate/?tab=webui) Datadog documentation.
 
 #### DogStatsD
 
