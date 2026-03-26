@@ -14,8 +14,7 @@ module "datadog_agent" {
   dd_api_key_secret = {
     arn = var.dd_api_key_secret_arn
   }
-  dd_site         = var.dd_site
-  dd_cluster_name = var.cluster_name
+  dd_site = var.dd_site
 
   # Enable all features
   dd_dogstatsd = {

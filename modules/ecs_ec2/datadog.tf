@@ -158,7 +158,6 @@ locals {
       { key = "DD_SITE", value = var.dd_site },
       { key = "DD_DOGSTATSD_TAG_CARDINALITY", value = var.dd_dogstatsd.dogstatsd_cardinality },
       { key = "DD_TAGS", value = var.dd_tags },
-      { key = "DD_CLUSTER_NAME", value = var.dd_cluster_name },
       { key = "DD_ORCHESTRATOR_EXPLORER_ORCHESTRATOR_DD_URL", value = var.dd_orchestrator_explorer.url },
       { key = "DD_LOG_LEVEL", value = var.dd_log_level },
     ] : { name = pair.key, value = pair.value } if pair.value != null

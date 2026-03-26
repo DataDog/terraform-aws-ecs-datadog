@@ -113,12 +113,6 @@ variable "dd_tags" {
   default     = null
 }
 
-variable "dd_cluster_name" {
-  description = "Datadog cluster name"
-  type        = string
-  default     = null
-}
-
 variable "dd_checks_cardinality" {
   description = "Datadog Agent checks cardinality"
   type        = string
