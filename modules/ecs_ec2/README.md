@@ -177,6 +177,52 @@ module "datadog_agent" {
 - Application containers use `DD_AGENT_HOST=127.0.0.1`
 - Less network isolation
 
+## TCP Fallback
+
+When `socket_enabled = false` is set on `dd_dogstatsd` or `dd_apm`, the module disables UDS communication for that component. As a result, the `dogstatsd_env_vars` and `apm_env_vars` outputs return empty lists — the module cannot know the agent's IP address at plan time.
+
+Your application containers must resolve the agent's IP address dynamically at container startup and set `DD_AGENT_HOST` themselves. Two common approaches:
+
+**Option 1 — EC2 instance metadata (IMDSv2):**
+
+```bash
+export DD_AGENT_HOST=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token)" \
+  http://169.254.169.254/latest/meta-data/local-ipv4)
+```
+
+**Option 2 — ECS container metadata file:**
+
+```bash
+export DD_AGENT_HOST=$(cat "$ECS_CONTAINER_METADATA_FILE" | python3 -c "import sys,json; print(json.load(sys.stdin)['HostPrivateIPv4Address'])")
+```
+
+Set `tcp_enabled = true` on `dd_dogstatsd` and/or `dd_apm` so that the agent exposes the corresponding TCP ports:
+
+- `dd_dogstatsd.tcp_enabled = true` — maps port `8125/UDP` on the host
+- `dd_apm.tcp_enabled = true` — maps port `8126/TCP` on the host
+
+Example configuration:
+
+```hcl
+module "datadog_agent" {
+  source = "DataDog/ecs-datadog/aws//modules/ecs_ec2"
+
+  # ... other config ...
+
+  dd_dogstatsd = {
+    enabled        = true
+    socket_enabled = false
+    tcp_enabled    = true
+  }
+
+  dd_apm = {
+    enabled        = true
+    socket_enabled = false
+    tcp_enabled    = true
+  }
+}
+```
+
 ## Features
 
 ### Core Monitoring
@@ -195,6 +241,8 @@ module "datadog_agent" {
     enabled                  = true
     origin_detection_enabled = true
     dogstatsd_cardinality    = "orchestrator"  # low, orchestrator, or high
+    socket_enabled           = true            # set to false to disable UDS
+    tcp_enabled              = false           # set to true to map port 8125/UDP
   }
 }
 ```
@@ -212,6 +260,8 @@ module "datadog_agent" {
     profiling                     = true
     trace_inferred_proxy_services = false
     data_streams                  = true
+    socket_enabled                = true   # set to false to disable UDS
+    tcp_enabled                   = false  # set to true to map port 8126/TCP
   }
 }
 ```
@@ -419,13 +469,13 @@ No modules.
 | <a name="input_create_service"></a> [create\_service](#input\_create\_service) | Whether to create the ECS daemon service. If false, only the task definition is created. | `bool` | `true` | no |
 | <a name="input_dd_api_key"></a> [dd\_api\_key](#input\_dd\_api\_key) | Datadog API Key | `string` | `null` | no |
 | <a name="input_dd_api_key_secret"></a> [dd\_api\_key\_secret](#input\_dd\_api\_key\_secret) | Datadog API Key Secret ARN | <pre>object({<br/>    arn = string<br/>  })</pre> | `null` | no |
-| <a name="input_dd_apm"></a> [dd\_apm](#input\_dd\_apm) | Configuration for Datadog APM | <pre>object({<br/>    enabled                       = optional(bool, true)<br/>    socket_enabled                = optional(bool, true)<br/>    profiling                     = optional(bool, false)<br/>    trace_inferred_proxy_services = optional(bool, false)<br/>    data_streams                  = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "data_streams": false,<br/>  "enabled": true,<br/>  "profiling": false,<br/>  "socket_enabled": true,<br/>  "trace_inferred_proxy_services": false<br/>}</pre> | no |
+| <a name="input_dd_apm"></a> [dd\_apm](#input\_dd\_apm) | Configuration for Datadog APM | <pre>object({<br/>    enabled                       = optional(bool, true)<br/>    socket_enabled                = optional(bool, true)<br/>    tcp_enabled                   = optional(bool, false)<br/>    profiling                     = optional(bool, false)<br/>    trace_inferred_proxy_services = optional(bool, false)<br/>    data_streams                  = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "data_streams": false,<br/>  "enabled": true,<br/>  "profiling": false,<br/>  "socket_enabled": true,<br/>  "tcp_enabled": false,<br/>  "trace_inferred_proxy_services": false<br/>}</pre> | no |
 | <a name="input_dd_cgroup_path"></a> [dd\_cgroup\_path](#input\_dd\_cgroup\_path) | Path to cgroup directory on the host. Defaults to /sys/fs/cgroup/. Use /cgroup/ for Amazon Linux 1 instances. | `string` | `"/sys/fs/cgroup/"` | no |
 | <a name="input_dd_checks_cardinality"></a> [dd\_checks\_cardinality](#input\_dd\_checks\_cardinality) | Datadog Agent checks cardinality | `string` | `null` | no |
 | <a name="input_dd_cpu"></a> [dd\_cpu](#input\_dd\_cpu) | Datadog Agent container CPU units | `number` | `256` | no |
 | <a name="input_dd_docker_labels"></a> [dd\_docker\_labels](#input\_dd\_docker\_labels) | Datadog Agent container docker labels | `map(string)` | `{}` | no |
 | <a name="input_dd_docker_socket_path"></a> [dd\_docker\_socket\_path](#input\_dd\_docker\_socket\_path) | Path to Docker socket on the host. Defaults to /var/run/docker.sock | `string` | `"/var/run/docker.sock"` | no |
-| <a name="input_dd_dogstatsd"></a> [dd\_dogstatsd](#input\_dd\_dogstatsd) | Configuration for Datadog DogStatsD | <pre>object({<br/>    enabled                  = optional(bool, true)<br/>    origin_detection_enabled = optional(bool, true)<br/>    dogstatsd_cardinality    = optional(string, "orchestrator")<br/>    socket_enabled           = optional(bool, true)<br/>  })</pre> | <pre>{<br/>  "dogstatsd_cardinality": "orchestrator",<br/>  "enabled": true,<br/>  "origin_detection_enabled": true,<br/>  "socket_enabled": true<br/>}</pre> | no |
+| <a name="input_dd_dogstatsd"></a> [dd\_dogstatsd](#input\_dd\_dogstatsd) | Configuration for Datadog DogStatsD | <pre>object({<br/>    enabled                  = optional(bool, true)<br/>    origin_detection_enabled = optional(bool, true)<br/>    dogstatsd_cardinality    = optional(string, "orchestrator")<br/>    socket_enabled           = optional(bool, true)<br/>    tcp_enabled              = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "dogstatsd_cardinality": "orchestrator",<br/>  "enabled": true,<br/>  "origin_detection_enabled": true,<br/>  "socket_enabled": true,<br/>  "tcp_enabled": false<br/>}</pre> | no |
 | <a name="input_dd_environment"></a> [dd\_environment](#input\_dd\_environment) | Datadog Agent container environment variables. Highest precedence and overwrites other environment variables defined by the module. For example, `dd_environment = [ { name = 'DD_VAR', value = 'DD_VAL' } ]` | `list(map(string))` | <pre>[<br/>  {}<br/>]</pre> | no |
 | <a name="input_dd_essential"></a> [dd\_essential](#input\_dd\_essential) | Whether the Datadog Agent container is essential | `bool` | `true` | no |
 | <a name="input_dd_health_check"></a> [dd\_health\_check](#input\_dd\_health\_check) | Datadog Agent health check configuration | <pre>object({<br/>    command      = optional(list(string))<br/>    interval     = optional(number)<br/>    retries      = optional(number)<br/>    start_period = optional(number)<br/>    timeout      = optional(number)<br/>  })</pre> | <pre>{<br/>  "command": [<br/>    "CMD-SHELL",<br/>    "/probe.sh"<br/>  ],<br/>  "interval": 15,<br/>  "retries": 3,<br/>  "start_period": 60,<br/>  "timeout": 5<br/>}</pre> | no |
@@ -462,14 +512,14 @@ No modules.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_apm_env_vars"></a> [apm\_env\_vars](#output\_apm\_env\_vars) | Environment variables for APM in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD\_AGENT\_HOST dynamically via the EC2 metadata endpoint). |
+| <a name="output_apm_env_vars"></a> [apm\_env\_vars](#output\_apm\_env\_vars) | Environment variables for APM in user application containers. When UDS is enabled (socket\_enabled = true), provides DD\_TRACE\_AGENT\_URL pointing to the Unix socket. When UDS is disabled, returns an empty list — you must set DD\_AGENT\_HOST dynamically at container startup via IMDSv2 (http://169.254.169.254/latest/meta-data/local-ipv4) or the ECS container metadata file ($ECS\_CONTAINER\_METADATA\_FILE → .HostPrivateIPv4Address). |
 | <a name="output_app_dd_sockets_mount"></a> [app\_dd\_sockets\_mount](#output\_app\_dd\_sockets\_mount) | Mount point for the shared UDS socket volume. Add this to your application container's mountPoints to enable communication with the Datadog Agent over Unix Domain Sockets. |
 | <a name="output_app_dd_sockets_volume"></a> [app\_dd\_sockets\_volume](#output\_app\_dd\_sockets\_volume) | Volume definition for the shared UDS socket volume. Add this to your application task definition's volumes to enable UDS communication with the Datadog Agent. |
 | <a name="output_arn"></a> [arn](#output\_arn) | Full ARN of the Task Definition (including both family and revision). |
 | <a name="output_arn_without_revision"></a> [arn\_without\_revision](#output\_arn\_without\_revision) | ARN of the Task Definition with the trailing revision removed. |
 | <a name="output_container_definitions"></a> [container\_definitions](#output\_container\_definitions) | A list of valid container definitions provided as a single valid JSON document. |
 | <a name="output_data_streams_env_vars"></a> [data\_streams\_env\_vars](#output\_data\_streams\_env\_vars) | Environment variables for Data Streams Monitoring in user application containers. Only includes values when enabled. |
-| <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD\_AGENT\_HOST dynamically via the EC2 metadata endpoint). |
+| <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD in user application containers. When UDS is enabled (socket\_enabled = true), provides DD\_DOGSTATSD\_URL pointing to the Unix socket. When UDS is disabled, returns an empty list — you must set DD\_AGENT\_HOST dynamically at container startup via IMDSv2 (http://169.254.169.254/latest/meta-data/local-ipv4) or the ECS container metadata file ($ECS\_CONTAINER\_METADATA\_FILE → .HostPrivateIPv4Address). |
 | <a name="output_execution_role_arn"></a> [execution\_role\_arn](#output\_execution\_role\_arn) | ARN of the task execution role. |
 | <a name="output_family"></a> [family](#output\_family) | A unique name for your task definition. |
 | <a name="output_ipc_mode"></a> [ipc\_mode](#output\_ipc\_mode) | IPC resource namespace to be used for the containers. |
