@@ -156,6 +156,7 @@ locals {
     for pair in [
       { key = "DD_API_KEY", value = var.dd_api_key },
       { key = "DD_SITE", value = var.dd_site },
+      { key = "DD_CHECKS_TAG_CARDINALITY", value = var.dd_checks_cardinality },
       { key = "DD_DOGSTATSD_TAG_CARDINALITY", value = var.dd_dogstatsd.dogstatsd_cardinality },
       { key = "DD_TAGS", value = var.dd_tags },
       { key = "DD_ORCHESTRATOR_EXPLORER_ORCHESTRATOR_DD_URL", value = var.dd_orchestrator_explorer.url },
@@ -250,6 +251,24 @@ locals {
 ################################################################################
 
 locals {
+  # Conditional port mappings based on transport configuration
+  dd_port_mappings = concat(
+    var.dd_dogstatsd.enabled && var.dd_dogstatsd.tcp_enabled ? [
+      {
+        containerPort = 8125
+        hostPort      = 8125
+        protocol      = "udp"
+      }
+    ] : [],
+    var.dd_apm.enabled && var.dd_apm.tcp_enabled ? [
+      {
+        containerPort = 8126
+        hostPort      = 8126
+        protocol      = "tcp"
+      }
+    ] : []
+  )
+
   # Datadog Agent container
   dd_agent_container = [
     merge(
@@ -269,18 +288,7 @@ locals {
           }
         ] : []
 
-        portMappings = [
-          {
-            containerPort = 8125
-            hostPort      = 8125
-            protocol      = "udp"
-          },
-          {
-            containerPort = 8126
-            hostPort      = 8126
-            protocol      = "tcp"
-          }
-        ]
+        portMappings = local.dd_port_mappings
 
         mountPoints    = concat(local.dd_agent_mount, local.dd_log_mounts, local.apm_dsd_mount)
         systemControls = []

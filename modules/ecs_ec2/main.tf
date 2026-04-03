@@ -136,5 +136,17 @@ resource "aws_ecs_task_definition" "datadog_agent" {
       condition     = local.is_linux || (var.dd_log_collection.enabled == false)
       error_message = "Log collection is not supported on Windows. Please set dd_log_collection.enabled to false."
     }
+
+    # DogStatsD must have at least one transport configured when enabled
+    precondition {
+      condition     = !var.dd_dogstatsd.enabled || var.dd_dogstatsd.socket_enabled || var.dd_dogstatsd.tcp_enabled
+      error_message = "DogStatsD is enabled but neither UDS (socket_enabled) nor TCP (tcp_enabled) transport is configured. Set at least one to true."
+    }
+
+    # APM must have at least one transport configured when enabled
+    precondition {
+      condition     = !var.dd_apm.enabled || var.dd_apm.socket_enabled || var.dd_apm.tcp_enabled
+      error_message = "APM is enabled but neither UDS (socket_enabled) nor TCP (tcp_enabled) transport is configured. Set at least one to true."
+    }
   }
 }

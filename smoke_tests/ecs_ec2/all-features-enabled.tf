@@ -32,6 +32,8 @@ module "all_features" {
     enabled = true
   }
 
+  dd_checks_cardinality = "orchestrator"
+
   family         = "${var.test_prefix}-all-features"
   create_service = false
 

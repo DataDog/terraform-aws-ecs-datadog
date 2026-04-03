@@ -128,7 +128,7 @@ output "service_desired_count" {
 ################################################################################
 
 output "dogstatsd_env_vars" {
-  description = "Environment variables for DogStatsD in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD_AGENT_HOST dynamically via the EC2 metadata endpoint)."
+  description = "Environment variables for DogStatsD in user application containers. When UDS is enabled (socket_enabled = true), provides DD_DOGSTATSD_URL pointing to the Unix socket. When UDS is disabled, returns an empty list — you must set DD_AGENT_HOST dynamically at container startup via IMDSv2 (http://169.254.169.254/latest/meta-data/local-ipv4) or the ECS container metadata file ($ECS_CONTAINER_METADATA_FILE → .HostPrivateIPv4Address)."
   value = local.is_dsd_socket_mount ? [
     {
       name  = "DD_DOGSTATSD_URL"
@@ -138,7 +138,7 @@ output "dogstatsd_env_vars" {
 }
 
 output "apm_env_vars" {
-  description = "Environment variables for APM in user application containers. When UDS is enabled, uses the socket path. When disabled, returns an empty list (users must set DD_AGENT_HOST dynamically via the EC2 metadata endpoint)."
+  description = "Environment variables for APM in user application containers. When UDS is enabled (socket_enabled = true), provides DD_TRACE_AGENT_URL pointing to the Unix socket. When UDS is disabled, returns an empty list — you must set DD_AGENT_HOST dynamically at container startup via IMDSv2 (http://169.254.169.254/latest/meta-data/local-ipv4) or the ECS container metadata file ($ECS_CONTAINER_METADATA_FILE → .HostPrivateIPv4Address)."
   value = local.is_apm_socket_mount ? [
     {
       name  = "DD_TRACE_AGENT_URL"
