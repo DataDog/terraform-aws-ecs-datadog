@@ -2,6 +2,8 @@ module github.com/DataDog/terraform-ecs-datadog
 
 go 1.25.7
 
+toolchain go1.26.2
+
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.56.3
