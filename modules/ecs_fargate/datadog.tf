@@ -6,7 +6,7 @@
 # Version and Install Info
 locals {
   # Datadog ECS task tags
-  version = "1.1.0-beta"
+  version = "1.1.0"
 
   install_info_tool              = "terraform"
   install_info_tool_version      = "terraform-aws-ecs-datadog"
