@@ -53,6 +53,15 @@ locals {
     } : {}
   ) : null
 
+  # Log configuration for the containers this module creates. They normally log
+  # through the Fluent Bit router the module sets up, but that router does not
+  # exist when `dd_log_collection` is disabled — and it can never route its own
+  # logs. Without `dd_log_configuration` to fall back on, those containers are
+  # registered with no log driver at all, which fails AWS Foundational Security
+  # Best Practices control ECS.9 ("ECS task definitions should have a logging
+  # configuration") and leaves the Agent's own output unreachable.
+  dd_managed_log_configuration = local.dd_firelens_log_configuration != null ? local.dd_firelens_log_configuration : var.dd_log_configuration
+
   # Application container modifications
   is_apm_socket_mount = var.dd_apm.enabled && var.dd_apm.socket_enabled && local.is_linux
   is_dsd_socket_mount = var.dd_dogstatsd.enabled && var.dd_dogstatsd.socket_enabled && local.is_linux
@@ -374,6 +383,7 @@ locals {
         essential              = false
         readOnlyRootFilesystem = true
         command                = ["/bin/sh", "-c", "cp -vnR /etc/datadog-agent/* /agent-config/ && exit 0"]
+        logConfiguration       = local.dd_managed_log_configuration
         mountPoints = [
           {
             sourceVolume  = "agent-config"
@@ -415,7 +425,7 @@ locals {
           ],
 
           mountPoints      = local.dd_agent_mount,
-          logConfiguration = local.dd_firelens_log_configuration,
+          logConfiguration = local.dd_managed_log_configuration,
           dependsOn        = local.dd_agent_dependency
           systemControls   = []
           volumesFrom      = []
@@ -452,6 +462,7 @@ locals {
             try(var.dd_log_collection.fluentbit_config.firelens_options.config_file_value != null, false) ? { config-file-value = var.dd_log_collection.fluentbit_config.firelens_options.config_file_value } : {}
           )
         }
+        logConfiguration = var.dd_log_configuration
         cpu              = var.dd_log_collection.fluentbit_config.cpu
         memory_limit_mib = var.dd_log_collection.fluentbit_config.memory_limit_mib
         user             = "0"
@@ -480,6 +491,7 @@ locals {
     {
       name             = "cws-instrumentation-init"
       image            = "datadog/cws-instrumentation:latest"
+      logConfiguration = local.dd_managed_log_configuration
       cpu              = var.dd_cws.cpu
       memory_limit_mib = var.dd_cws.memory_limit_mib
       user             = "0"
