@@ -442,7 +442,7 @@ locals {
         name                   = "datadog-log-router"
         image                  = "${var.dd_log_collection.fluentbit_config.registry}:${var.dd_log_collection.fluentbit_config.image_version}"
         essential              = var.dd_log_collection.fluentbit_config.is_log_router_essential
-        readonlyRootFilesystem = true
+        readonlyRootFilesystem = var.dd_readonly_root_filesystem
         firelensConfiguration = {
           type = "fluentbit"
           options = merge(
