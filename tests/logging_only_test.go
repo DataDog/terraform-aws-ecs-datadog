@@ -81,6 +81,7 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 	s.Equal("public.ecr.aws/aws-observability/aws-for-fluent-bit:stable", *logRouterContainer.Image,
 		"Unexpected image for log router")
 	s.False(*logRouterContainer.Essential, "Log router should not be essential")
+	s.True(*logRouterContainer.ReadonlyRootFilesystem, "Log router should have a read-only root filesystem")
 	s.Equal("0", *logRouterContainer.User, "Log router should run as root user")
 
 	// Verify log router environment variables

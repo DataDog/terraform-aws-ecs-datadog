@@ -372,7 +372,7 @@ locals {
         name                   = "init-volume"
         image                  = "${var.dd_registry}:${var.dd_image_version}"
         essential              = false
-        readOnlyRootFilesystem = true
+        readonlyRootFilesystem = true
         command                = ["/bin/sh", "-c", "cp -vnR /etc/datadog-agent/* /agent-config/ && exit 0"]
         mountPoints = [
           {
@@ -439,9 +439,10 @@ locals {
   dd_log_container = local.is_fluentbit_supported ? [
     merge(
       {
-        name      = "datadog-log-router"
-        image     = "${var.dd_log_collection.fluentbit_config.registry}:${var.dd_log_collection.fluentbit_config.image_version}"
-        essential = var.dd_log_collection.fluentbit_config.is_log_router_essential
+        name                   = "datadog-log-router"
+        image                  = "${var.dd_log_collection.fluentbit_config.registry}:${var.dd_log_collection.fluentbit_config.image_version}"
+        essential              = var.dd_log_collection.fluentbit_config.is_log_router_essential
+        readonlyRootFilesystem = true
         firelensConfiguration = {
           type = "fluentbit"
           options = merge(

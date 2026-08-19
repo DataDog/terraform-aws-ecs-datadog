@@ -29,6 +29,7 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 
 	initContainer, found := GetContainer(containers, "init-volume")
 	s.True(found, "Container init-volume not found in definitions")
+	s.True(*initContainer.ReadonlyRootFilesystem, "init-volume should have a read-only root filesystem")
 	AssertMountPoint(s.T(), initContainer, MountInitVolume)
 
 	// Test Agent Container
@@ -86,6 +87,7 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 	s.True(found, "Container datadog-log-router not found in definitions")
 	s.Equal("public.ecr.aws/aws-observability/aws-for-fluent-bit:stable", *logRouterContainer.Image)
 	s.False(*logRouterContainer.Essential, "datadog-log-router should not be essential")
+	s.True(*logRouterContainer.ReadonlyRootFilesystem, "datadog-log-router should have a read-only root filesystem")
 	s.Equal("0", *logRouterContainer.User, "Unexpected user for datadog-log-router")
 	s.Equal(types.FirelensConfigurationTypeFluentbit, logRouterContainer.FirelensConfiguration.Type, "Unexpected firelens type")
 	s.Equal("true", logRouterContainer.FirelensConfiguration.Options["enable-ecs-log-metadata"], "Unexpected firelens option value")
