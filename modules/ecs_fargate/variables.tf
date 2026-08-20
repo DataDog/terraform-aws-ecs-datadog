@@ -289,6 +289,19 @@ variable "dd_log_collection" {
   }
 }
 
+variable "dd_log_configuration" {
+  description = "Log configuration for the containers this module creates: the Datadog Agent, the `init-volume` container added by `dd_readonly_root_filesystem`, the CWS instrumentation init container, and the Fluent Bit log router. Set this when `dd_log_collection` is disabled because you run your own log router, or to capture the Fluent Bit router's own logs, which it cannot route through itself. Containers registered without a log driver fail AWS Foundational Security Best Practices control ECS.9."
+  type = object({
+    logDriver = string
+    options   = optional(map(string))
+    secretOptions = optional(list(object({
+      name      = string
+      valueFrom = string
+    })))
+  })
+  default = null
+}
+
 variable "dd_cws" {
   description = "Configuration for Datadog Cloud Workload Security (CWS)"
   type = object({
