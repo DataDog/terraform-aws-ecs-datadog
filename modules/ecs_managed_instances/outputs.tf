@@ -109,3 +109,13 @@ output "apm_env_vars" {
     }
   ] : []
 }
+
+output "data_streams_env_vars" {
+  description = "Environment variables for Data Streams Monitoring in user application containers. Only includes values when enabled."
+  value = var.dd_apm.data_streams ? [
+    {
+      name  = "DD_DATA_STREAMS_ENABLED"
+      value = "true"
+    }
+  ] : []
+}
