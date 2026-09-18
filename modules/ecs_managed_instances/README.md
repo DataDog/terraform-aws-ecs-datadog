@@ -131,6 +131,14 @@ resource "aws_ecs_task_definition" "app" {
 }
 ```
 
+### Available Helper Outputs
+
+- **`dogstatsd_env_vars`**: Environment variables for DogStatsD (sets `DD_DOGSTATSD_URL` to the UDS socket path when enabled)
+- **`apm_env_vars`**: Environment variables for APM (sets `DD_TRACE_AGENT_URL` to the UDS socket path when enabled)
+- **`app_dd_sockets_volume`**: Volume definition for the shared UDS socket directory - add to your task definition's `volume` blocks
+- **`app_dd_sockets_mount`**: Mount point for the shared UDS socket directory - add to your application container's `mountPoints`
+- **`data_streams_env_vars`**: Environment variables for Data Streams Monitoring (when enabled)
+
 ## Log Collection
 
 **Container log collection through the Datadog Agent is not supported in daemon mode on ECS Managed Instances.** This module enforces that with a `precondition` that fails the plan if `dd_log_collection.enabled = true`.
@@ -321,6 +329,7 @@ No modules.
 | <a name="output_daemon_arn"></a> [daemon\_arn](#output\_daemon\_arn) | ARN of the daemon. Only available if create\_daemon = true. |
 | <a name="output_daemon_deployment_arn"></a> [daemon\_deployment\_arn](#output\_daemon\_deployment\_arn) | ARN of the daemon's latest deployment. Only available if create\_daemon = true. |
 | <a name="output_daemon_status"></a> [daemon\_status](#output\_daemon\_status) | Status of the daemon (ACTIVE or DELETE\_IN\_PROGRESS). Only available if create\_daemon = true. |
+| <a name="output_data_streams_env_vars"></a> [data\_streams\_env\_vars](#output\_data\_streams\_env\_vars) | Environment variables for Data Streams Monitoring in user application containers. Only includes values when enabled. |
 | <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD in user application containers. Provided only when UDS is enabled (dd\_dogstatsd.enabled && dd\_dogstatsd.socket\_enabled); otherwise an empty list. |
 | <a name="output_execution_role_arn"></a> [execution\_role\_arn](#output\_execution\_role\_arn) | ARN of the task execution role. |
 | <a name="output_family"></a> [family](#output\_family) | A unique name for your daemon task definition. |
