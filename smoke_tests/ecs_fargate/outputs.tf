@@ -30,6 +30,10 @@ output "logging-only" {
   value = module.dd_task_logging_only
 }
 
+output "managed-container-logging" {
+  value = module.dd_task_managed_container_logging
+}
+
 output "role-parsing-with-path" {
   value = module.dd_task_role_parsing_with_path
 }
