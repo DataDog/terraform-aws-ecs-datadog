@@ -130,7 +130,15 @@ func (s *ECSManagedInstancesSuite) TestDefaultConfiguration() {
 func (s *ECSManagedInstancesSuite) TestCreateDaemonDisabled() {
 	log.Println("TestCreateDaemonDisabled: Running test...")
 
-	daemonArn := terraform.Output(s.T(), s.terraformOptions, "default_daemon_arn")
+	// Terraform omits root module outputs from state entirely when their
+	// value is null, so terraform.Output (which errors on a missing key)
+	// can't be used directly here - a "not found" error IS the confirmation
+	// that daemon_arn is null.
+	daemonArn, err := terraform.OutputE(s.T(), s.terraformOptions, "default_daemon_arn")
+	if err != nil {
+		s.Contains(err.Error(), "not found", "expected only a 'not found' error for a null output, got: %v", err)
+		return
+	}
 	s.Empty(daemonArn, "daemon_arn should be empty/null when create_daemon = false")
 }
 
