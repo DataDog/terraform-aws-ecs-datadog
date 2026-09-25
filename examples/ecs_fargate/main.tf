@@ -39,6 +39,11 @@ module "datadog_ecs_fargate_task" {
     profiling = true,
   }
 
+  dd_apm_instrumentation = {
+    language       = "python"
+    container_name = "dummy-python-app"
+  }
+
   dd_log_collection = {
     enabled = true,
   }
@@ -59,6 +64,12 @@ module "datadog_ecs_fargate_task" {
       name      = "dummy-apm-app",
       image     = "ghcr.io/datadog/apps-tracegen:main",
       essential = true,
+    },
+    {
+      name      = "dummy-python-app",
+      image     = "public.ecr.aws/docker/library/python:3.12-slim",
+      essential = false,
+      command   = ["python", "-m", "http.server", "8080"],
     },
     {
       name      = "dummy-cws-app",
