@@ -159,6 +159,15 @@ locals {
       value = "true"
     },
     {
+      name  = "DD_ECS_TASK_COLLECTION_ENABLED"
+      value = var.dd_orchestrator_explorer.enabled ? "true" : "false"
+    },
+    {
+      # In-container path of the host socket mounted by cri_mounts, not the host path.
+      name  = "DD_CRI_SOCKET_PATH"
+      value = "/var/run/containerd/containerd.sock"
+    },
+    {
       name  = "DD_INSTALL_INFO_TOOL"
       value = local.install_info_tool
     },
@@ -182,7 +191,6 @@ locals {
       { key = "DD_TAGS", value = var.dd_tags },
       { key = "DD_ORCHESTRATOR_EXPLORER_ORCHESTRATOR_DD_URL", value = var.dd_orchestrator_explorer.url },
       { key = "DD_LOG_LEVEL", value = var.dd_log_level },
-      { key = "DD_CRI_SOCKET_PATH", value = var.dd_cri_socket_path },
     ] : { name = pair.key, value = pair.value } if pair.value != null
   ]
 
@@ -199,12 +207,19 @@ locals {
   ] : []
 
   # APM configuration variables (agent-side only)
-  apm_vars = var.dd_apm.enabled ? [
+  apm_vars = [
     {
       name  = "DD_APM_ENABLED"
-      value = "true"
+      value = tostring(var.dd_apm.enabled)
     }
-  ] : []
+  ]
+
+  dogstatsd_vars = [
+    {
+      name  = "DD_USE_DOGSTATSD"
+      value = tostring(var.dd_dogstatsd.enabled)
+    }
+  ]
 
   process_vars = var.dd_process_collection.enabled ? [
     {
@@ -245,6 +260,7 @@ locals {
       local.dynamic_env,
       local.origin_detection_vars,
       local.apm_vars,
+      local.dogstatsd_vars,
       local.process_vars,
       local.network_monitoring_env,
       local.tcp_traffic_vars,

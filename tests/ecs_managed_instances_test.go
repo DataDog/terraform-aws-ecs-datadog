@@ -88,14 +88,16 @@ func (s *ECSManagedInstancesSuite) TestDefaultConfiguration() {
 	s.True(container.Essential)
 
 	expectedEnvVars := map[string]string{
-		"ECS_MANAGED_INSTANCES":         "true",
-		"DD_INSTALL_INFO_TOOL":          "terraform",
-		"DD_INSTALL_INFO_TOOL_VERSION":  "terraform-aws-ecs-datadog",
-		"DD_API_KEY":                    "test-api-key",
-		"DD_SITE":                       "datadoghq.com",
-		"DD_CRI_SOCKET_PATH":            "/var/run/containerd/containerd.sock",
-		"DD_DOGSTATSD_ORIGIN_DETECTION": "true",
-		"DD_APM_ENABLED":                "true",
+		"ECS_MANAGED_INSTANCES":          "true",
+		"DD_INSTALL_INFO_TOOL":           "terraform",
+		"DD_INSTALL_INFO_TOOL_VERSION":   "terraform-aws-ecs-datadog",
+		"DD_API_KEY":                     "test-api-key",
+		"DD_SITE":                        "datadoghq.com",
+		"DD_CRI_SOCKET_PATH":             "/var/run/containerd/containerd.sock",
+		"DD_DOGSTATSD_ORIGIN_DETECTION":  "true",
+		"DD_APM_ENABLED":                 "true",
+		"DD_USE_DOGSTATSD":               "true",
+		"DD_ECS_TASK_COLLECTION_ENABLED": "true",
 	}
 	AssertMIEnvVars(s.T(), container, expectedEnvVars)
 
@@ -240,4 +242,37 @@ func TestInvalidConfigurations(t *testing.T) {
 
 	assertContains("Container log collection through the Datadog Agent is not supported in daemon mode")
 	assertContains("neither UDS (socket_enabled) nor TCP (tcp_enabled) transport is configured")
+}
+
+// TestFeaturesDisabled verifies disabled features are turned off explicitly
+// (the Agent enables APM and DogStatsD by default) and that overriding the
+// host containerd socket path leaves the in-container path fixed.
+func (s *ECSManagedInstancesSuite) TestFeaturesDisabled() {
+	log.Println("TestFeaturesDisabled: Running test...")
+
+	container := s.unmarshalMIContainer("features_disabled_container_definition")
+
+	AssertMIEnvVars(s.T(), container, map[string]string{
+		"DD_APM_ENABLED":                 "false",
+		"DD_USE_DOGSTATSD":               "false",
+		"DD_ECS_TASK_COLLECTION_ENABLED": "false",
+		"DD_CRI_SOCKET_PATH":             "/var/run/containerd/containerd.sock",
+	})
+	AssertMINotEnvVars(s.T(), container, []string{"DD_DOGSTATSD_ORIGIN_DETECTION"})
+	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "containerd_sock", ContainerPath: "/var/run/containerd/containerd.sock", ReadOnly: true})
+}
+
+// TestAppEnvVarsOutputs verifies the application-side helper outputs.
+func (s *ECSManagedInstancesSuite) TestAppEnvVarsOutputs() {
+	log.Println("TestAppEnvVarsOutputs: Running test...")
+
+	for output, name := range map[string]string{
+		"app_env_vars_profiling":            "DD_PROFILING_ENABLED",
+		"app_env_vars_trace_inferred_proxy": "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED",
+		"app_env_vars_data_streams":         "DD_DATA_STREAMS_ENABLED",
+	} {
+		var vars []map[string]string
+		terraform.OutputStruct(s.T(), s.terraformOptions, output, &vars)
+		s.Equal([]map[string]string{{"name": name, "value": "true"}}, vars, output)
+	}
 }

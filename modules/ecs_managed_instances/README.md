@@ -138,6 +138,8 @@ resource "aws_ecs_task_definition" "app" {
 - **`app_dd_sockets_volume`**: Volume definition for the shared UDS socket directory - add to your task definition's `volume` blocks
 - **`app_dd_sockets_mount`**: Mount point for the shared UDS socket directory - add to your application container's `mountPoints`
 - **`data_streams_env_vars`**: Environment variables for Data Streams Monitoring (when enabled)
+- **`profiling_env_vars`**: Environment variables for continuous profiling (when enabled)
+- **`trace_inferred_proxy_env_vars`**: Environment variables for trace inferred proxy services (when enabled)
 
 ## Log Collection
 
@@ -290,7 +292,7 @@ No modules.
 | <a name="input_dd_cgroup_path"></a> [dd\_cgroup\_path](#input\_dd\_cgroup\_path) | Path to cgroup directory on the host. Defaults to /sys/fs/cgroup/. | `string` | `"/sys/fs/cgroup/"` | no |
 | <a name="input_dd_checks_cardinality"></a> [dd\_checks\_cardinality](#input\_dd\_checks\_cardinality) | Datadog Agent checks cardinality | `string` | `null` | no |
 | <a name="input_dd_cpu"></a> [dd\_cpu](#input\_dd\_cpu) | Datadog Agent container CPU units | `number` | `256` | no |
-| <a name="input_dd_cri_socket_path"></a> [dd\_cri\_socket\_path](#input\_dd\_cri\_socket\_path) | Path to the containerd socket on the host. ECS Managed Instances uses containerd, not Docker, so this replaces the docker socket path used by the ecs\_ec2 module. Defaults to /var/run/containerd/containerd.sock | `string` | `"/var/run/containerd/containerd.sock"` | no |
+| <a name="input_dd_cri_socket_path"></a> [dd\_cri\_socket\_path](#input\_dd\_cri\_socket\_path) | Path to the containerd socket on the host. It is always mounted at /var/run/containerd/containerd.sock inside the Agent container. ECS Managed Instances uses containerd, not Docker, so this replaces the docker socket path used by the ecs\_ec2 module. Defaults to /var/run/containerd/containerd.sock | `string` | `"/var/run/containerd/containerd.sock"` | no |
 | <a name="input_dd_dogstatsd"></a> [dd\_dogstatsd](#input\_dd\_dogstatsd) | Configuration for Datadog DogStatsD. UDS (socket\_enabled) is the default and is Datadog-documented for daemon mode on ECS Managed Instances. TCP (tcp\_enabled) is also supported: daemons on an instance share a static bridge IP (169.254.172.2) reachable over the network. Origin detection over TCP requires a real DogStatsD client library, since the client embeds the container ID/inode directly in the packet - a hand-rolled socket sender will produce untagged metrics. | <pre>object({<br/>    enabled                  = optional(bool, true)<br/>    origin_detection_enabled = optional(bool, true)<br/>    dogstatsd_cardinality    = optional(string, "orchestrator")<br/>    socket_enabled           = optional(bool, true)<br/>    tcp_enabled              = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "dogstatsd_cardinality": "orchestrator",<br/>  "enabled": true,<br/>  "origin_detection_enabled": true,<br/>  "socket_enabled": true,<br/>  "tcp_enabled": false<br/>}</pre> | no |
 | <a name="input_dd_environment"></a> [dd\_environment](#input\_dd\_environment) | Datadog Agent container environment variables. Highest precedence and overwrites other environment variables defined by the module. For example, `dd_environment = [ { name = 'DD_VAR', value = 'DD_VAL' } ]`. Defaults to `[]` (not `[{}]` as in the ecs\_ec2/ecs\_fargate modules) because the `environment` block on aws\_ecs\_daemon\_task\_definition is a Terraform Set rather than an ordered list: an empty map would produce an entry with null name/value that passes through into the Set, and precedence must instead be implemented via explicit dedupe-by-name. | `list(map(string))` | `[]` | no |
 | <a name="input_dd_essential"></a> [dd\_essential](#input\_dd\_essential) | Whether the Datadog Agent container is essential | `bool` | `true` | no |
@@ -333,8 +335,10 @@ No modules.
 | <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD in user application containers. Provided only when UDS is enabled (dd\_dogstatsd.enabled && dd\_dogstatsd.socket\_enabled); otherwise an empty list. |
 | <a name="output_execution_role_arn"></a> [execution\_role\_arn](#output\_execution\_role\_arn) | ARN of the task execution role. |
 | <a name="output_family"></a> [family](#output\_family) | A unique name for your daemon task definition. |
+| <a name="output_profiling_env_vars"></a> [profiling\_env\_vars](#output\_profiling\_env\_vars) | Environment variables for continuous profiling in user application containers. Only includes values when enabled. |
 | <a name="output_revision"></a> [revision](#output\_revision) | Revision of the daemon task definition in a particular family. |
 | <a name="output_tags"></a> [tags](#output\_tags) | Key-value map of resource tags. |
 | <a name="output_tags_all"></a> [tags\_all](#output\_tags\_all) | Map of tags assigned to the resource, including inherited tags. |
 | <a name="output_task_role_arn"></a> [task\_role\_arn](#output\_task\_role\_arn) | ARN of IAM role that allows your Amazon ECS container task to make calls to other AWS services. |
+| <a name="output_trace_inferred_proxy_env_vars"></a> [trace\_inferred\_proxy\_env\_vars](#output\_trace\_inferred\_proxy\_env\_vars) | Environment variables for trace inferred proxy services in user application containers. Only includes values when enabled. |
 <!-- END_TF_DOCS -->

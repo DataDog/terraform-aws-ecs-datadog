@@ -226,7 +226,7 @@ variable "dd_network_monitoring" {
 }
 
 variable "dd_cri_socket_path" {
-  description = "Path to the containerd socket on the host. ECS Managed Instances uses containerd, not Docker, so this replaces the docker socket path used by the ecs_ec2 module. Defaults to /var/run/containerd/containerd.sock"
+  description = "Path to the containerd socket on the host. It is always mounted at /var/run/containerd/containerd.sock inside the Agent container. ECS Managed Instances uses containerd, not Docker, so this replaces the docker socket path used by the ecs_ec2 module. Defaults to /var/run/containerd/containerd.sock"
   type        = string
   default     = "/var/run/containerd/containerd.sock"
   nullable    = false
