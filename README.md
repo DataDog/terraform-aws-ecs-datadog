@@ -10,6 +10,8 @@ For more information on the ECS Fargate module, reference the submodule [documen
 
 For more information on the ECS on EC2 module, reference the submodule [documentation](https://github.com/DataDog/terraform-aws-ecs-datadog/blob/main/modules/ecs_ec2/README.md).
 
+For more information on the ECS Managed Instances module, reference the submodule [documentation](https://github.com/DataDog/terraform-aws-ecs-datadog/blob/main/modules/ecs_managed_instances/README.md) - **read the warnings there before using it in production**, this module has real operational risks around fleet-wide instance replacement on any configuration change.
+
 If you encounter any issues, please open a GitHub issue to let us know.
 
 ## Usage
@@ -54,5 +56,26 @@ module "datadog_agent" {
 
   # Daemon Service
   cluster_arn = "arn:aws:ecs:us-east-1:0000000000:cluster/my-cluster"
+}
+```
+
+### ECS Managed Instances
+
+```hcl
+module "datadog_agent" {
+  source  = "DataDog/ecs-datadog/aws//modules/ecs_managed_instances"
+
+  # Datadog Configuration
+  dd_api_key_secret = {
+    arn = "arn:aws:secretsmanager:us-east-1:0000000000:secret:example-secret"
+  }
+  dd_tags = "team:ecs-xp, owner:container-monitoring"
+
+  # Task Definition
+  family = "datadog-agent-daemon"
+
+  # ECS Managed Daemon
+  cluster_arn            = "arn:aws:ecs:us-east-1:0000000000:cluster/my-cluster"
+  capacity_provider_arns = ["arn:aws:ecs:us-east-1:0000000000:capacity-provider/my-managed-instances-cp"]
 }
 ```
