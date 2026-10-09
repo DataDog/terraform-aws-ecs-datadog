@@ -91,23 +91,37 @@ output "app_dd_sockets_mount" {
 }
 
 output "dogstatsd_env_vars" {
-  description = "Environment variables for DogStatsD in user application containers. Provided only when UDS is enabled (dd_dogstatsd.enabled && dd_dogstatsd.socket_enabled); otherwise an empty list."
-  value = var.dd_dogstatsd.enabled && var.dd_dogstatsd.socket_enabled ? [
-    {
-      name  = "DD_DOGSTATSD_URL"
-      value = "unix:///var/run/datadog/dsd.socket"
-    }
-  ] : []
+  description = "Environment variables for DogStatsD in user application containers. When UDS is enabled (dd_dogstatsd.socket_enabled), provides DD_DOGSTATSD_URL pointing to the Unix socket. Otherwise, when TCP is enabled (dd_dogstatsd.tcp_enabled), provides DD_DOGSTATSD_URL pointing to the daemon bridge IP. Empty when DogStatsD is disabled."
+  value = !var.dd_dogstatsd.enabled ? [] : (
+    var.dd_dogstatsd.socket_enabled ? [
+      {
+        name  = "DD_DOGSTATSD_URL"
+        value = "unix:///var/run/datadog/dsd.socket"
+      }
+      ] : var.dd_dogstatsd.tcp_enabled ? [
+      {
+        name  = "DD_DOGSTATSD_URL"
+        value = "udp://${local.daemon_bridge_ipv4}:8125"
+      }
+    ] : []
+  )
 }
 
 output "apm_env_vars" {
-  description = "Environment variables for APM in user application containers. Provided only when UDS is enabled (dd_apm.enabled && dd_apm.socket_enabled); otherwise an empty list."
-  value = var.dd_apm.enabled && var.dd_apm.socket_enabled ? [
-    {
-      name  = "DD_TRACE_AGENT_URL"
-      value = "unix:///var/run/datadog/apm.socket"
-    }
-  ] : []
+  description = "Environment variables for APM in user application containers. When UDS is enabled (dd_apm.socket_enabled), provides DD_TRACE_AGENT_URL pointing to the Unix socket. Otherwise, when TCP is enabled (dd_apm.tcp_enabled), provides DD_TRACE_AGENT_URL pointing to the daemon bridge IP. Empty when APM is disabled."
+  value = !var.dd_apm.enabled ? [] : (
+    var.dd_apm.socket_enabled ? [
+      {
+        name  = "DD_TRACE_AGENT_URL"
+        value = "unix:///var/run/datadog/apm.socket"
+      }
+      ] : var.dd_apm.tcp_enabled ? [
+      {
+        name  = "DD_TRACE_AGENT_URL"
+        value = "http://${local.daemon_bridge_ipv4}:8126"
+      }
+    ] : []
+  )
 }
 
 output "data_streams_env_vars" {

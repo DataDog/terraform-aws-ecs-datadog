@@ -228,10 +228,12 @@ locals {
     }
   ] : []
 
+  # Static IPv4 address of the daemon bridge, shared by all daemons on an instance.
+  daemon_bridge_ipv4 = "169.254.172.2"
+
   # TCP fallback variables. Daemons share a single network namespace per instance
   # (the "daemon bridge"), so non-local traffic must be allowed for TCP-based
-  # DogStatsD/APM communication. This is not documented by Datadog for daemon
-  # mode; UDS is the recommended and default transport.
+  # DogStatsD/APM communication. UDS is the default transport.
   tcp_traffic_vars = concat(
     var.dd_dogstatsd.enabled && var.dd_dogstatsd.tcp_enabled ? [
       {

@@ -313,12 +313,22 @@ variable "tags" {
 }
 
 variable "volumes" {
-  description = "A list of additional host-path volume definitions that containers in your task may use, beyond the ones the module manages. Note: the volume block on aws_ecs_daemon_task_definition only supports `name` + `host.source_path` - no docker_volume_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler."
+  description = "Additional host-path volumes added to the daemon task, beyond the ones the module manages. The Agent container does not mount them. Names must be unique and must not be one of the module-managed volume names: containerd_sock, proc, cgroup, dd-sockets, debug. The volume block on aws_ecs_daemon_task_definition only supports `name` + `host.source_path` - no docker_volume_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler."
   type = list(object({
     name      = string
     host_path = optional(string)
   }))
   default = []
+
+  validation {
+    condition     = length(setintersection([for v in var.volumes : v.name], ["containerd_sock", "proc", "cgroup", "dd-sockets", "debug"])) == 0
+    error_message = "A volume name clashes with a module-managed volume. The names containerd_sock, proc, cgroup, dd-sockets, and debug are reserved."
+  }
+
+  validation {
+    condition     = length(distinct([for v in var.volumes : v.name])) == length(var.volumes)
+    error_message = "Volume names must be unique."
+  }
 }
 
 ################################################################################

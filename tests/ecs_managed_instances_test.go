@@ -276,3 +276,43 @@ func (s *ECSManagedInstancesSuite) TestAppEnvVarsOutputs() {
 		s.Equal([]map[string]string{{"name": name, "value": "true"}}, vars, output)
 	}
 }
+
+// TestTCPTransportOutputs verifies the application helper outputs point at
+// the daemon bridge IP when UDS is disabled and TCP is enabled.
+func (s *ECSManagedInstancesSuite) TestTCPTransportOutputs() {
+	log.Println("TestTCPTransportOutputs: Running test...")
+
+	for output, expected := range map[string]map[string]string{
+		"tcp_transport_dogstatsd_env_vars": {"name": "DD_DOGSTATSD_URL", "value": "udp://169.254.172.2:8125"},
+		"tcp_transport_apm_env_vars":       {"name": "DD_TRACE_AGENT_URL", "value": "http://169.254.172.2:8126"},
+	} {
+		var vars []map[string]string
+		terraform.OutputStruct(s.T(), s.terraformOptions, output, &vars)
+		s.Equal([]map[string]string{expected}, vars, output)
+	}
+}
+
+// TestInvalidVariables verifies variable validation rejects a user volume
+// that reuses a module-managed volume name. This uses its own root because
+// variable validation fails before resource preconditions are evaluated.
+func TestInvalidVariables(t *testing.T) {
+	terraformOptions := &terraform.Options{
+		TerraformDir: "../smoke_tests/ecs_managed_instances_invalid_variables",
+		Vars: map[string]any{
+			"dd_api_key": "test-api-key",
+		},
+		NoColor: true,
+	}
+
+	terraform.Init(t, terraformOptions)
+	_, err := terraform.PlanE(t, terraformOptions)
+	if err == nil {
+		t.Fatal("expected terraform plan to fail due to variable validation, but it succeeded")
+	}
+
+	normalizedErr := strings.Join(strings.Fields(err.Error()), " ")
+	expected := "A volume name clashes with a module-managed volume"
+	if !strings.Contains(normalizedErr, expected) {
+		t.Errorf("expected plan error to contain %q, got: %s", expected, err.Error())
+	}
+}
