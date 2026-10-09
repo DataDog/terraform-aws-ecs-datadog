@@ -133,17 +133,29 @@ locals {
 ################################################################################
 
 locals {
+  user_volumes = [for v in var.volumes : { name = v.name, host_path = v.host_path }]
+
+  # Every user volume is mounted; container_path defaults to host_path.
+  user_mounts = [
+    for v in var.volumes : {
+      source_volume  = v.name
+      container_path = coalesce(v.container_path, v.host_path)
+      read_only      = v.read_only
+    }
+  ]
+
   all_volumes = concat(
     local.cri_volumes,
     local.apm_dsd_volume,
     local.network_monitoring_volume,
-    var.volumes,
+    local.user_volumes,
   )
 
   dd_agent_mount = concat(
     local.cri_mounts,
     local.apm_dsd_mount,
     local.network_monitoring_mount,
+    local.user_mounts,
   )
 }
 
@@ -228,10 +240,12 @@ locals {
     }
   ] : []
 
+  # Static IPv4 address of the daemon bridge, shared by all daemons on an instance.
+  daemon_bridge_ipv4 = "169.254.172.2"
+
   # TCP fallback variables. Daemons share a single network namespace per instance
   # (the "daemon bridge"), so non-local traffic must be allowed for TCP-based
-  # DogStatsD/APM communication. This is not documented by Datadog for daemon
-  # mode; UDS is the recommended and default transport.
+  # DogStatsD/APM communication. UDS is the default transport.
   tcp_traffic_vars = concat(
     var.dd_dogstatsd.enabled && var.dd_dogstatsd.tcp_enabled ? [
       {

@@ -276,3 +276,62 @@ func (s *ECSManagedInstancesSuite) TestAppEnvVarsOutputs() {
 		s.Equal([]map[string]string{{"name": name, "value": "true"}}, vars, output)
 	}
 }
+
+// TestTCPTransportOutputs verifies the application helper outputs point at
+// the daemon bridge IP when UDS is disabled and TCP is enabled.
+func (s *ECSManagedInstancesSuite) TestTCPTransportOutputs() {
+	log.Println("TestTCPTransportOutputs: Running test...")
+
+	for output, expected := range map[string]map[string]string{
+		"tcp_transport_dogstatsd_env_vars": {"name": "DD_DOGSTATSD_URL", "value": "udp://169.254.172.2:8125"},
+		"tcp_transport_apm_env_vars":       {"name": "DD_TRACE_AGENT_URL", "value": "http://169.254.172.2:8126"},
+	} {
+		var vars []map[string]string
+		terraform.OutputStruct(s.T(), s.terraformOptions, output, &vars)
+		s.Equal([]map[string]string{expected}, vars, output)
+	}
+}
+
+// TestInvalidVariables verifies variable validation rejects a user volume
+// that reuses a module-managed volume name. This uses its own root because
+// variable validation fails before resource preconditions are evaluated.
+func TestInvalidVariables(t *testing.T) {
+	terraformOptions := &terraform.Options{
+		TerraformDir: "../smoke_tests/ecs_managed_instances_invalid_variables",
+		Vars: map[string]any{
+			"dd_api_key": "test-api-key",
+		},
+		NoColor: true,
+	}
+
+	terraform.Init(t, terraformOptions)
+	_, err := terraform.PlanE(t, terraformOptions)
+	if err == nil {
+		t.Fatal("expected terraform plan to fail due to variable validation, but it succeeded")
+	}
+
+	normalizedErr := strings.Join(strings.Fields(err.Error()), " ")
+	for _, expected := range []string{
+		"A volume name clashes with a module-managed volume",
+		"A volume container_path clashes with a module-managed mount path",
+		"A volume container_path must be an absolute path",
+		"A volume host_path must be an absolute path",
+		"A volume name is not valid",
+	} {
+		if !strings.Contains(normalizedErr, expected) {
+			t.Errorf("expected plan error to contain %q, got: %s", expected, err.Error())
+		}
+	}
+}
+
+// TestUserVolumes verifies every user volume is mounted, that container_path
+// defaults to host_path, and that mounts are read-only unless read_only = false.
+func (s *ECSManagedInstancesSuite) TestUserVolumes() {
+	log.Println("TestUserVolumes: Running test...")
+
+	container := s.unmarshalMIContainer("user_volumes_container_definition")
+
+	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "ro-data", ContainerPath: "/host/data/ro", ReadOnly: true})
+	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "rw-data", ContainerPath: "/host/data/rw", ReadOnly: false})
+	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "same-path", ContainerPath: "/data/same", ReadOnly: true})
+}

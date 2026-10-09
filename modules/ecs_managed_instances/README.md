@@ -88,11 +88,14 @@ Use the module's `app_dd_sockets_volume`, `app_dd_sockets_mount`, `apm_env_vars`
 
 ### TCP fallback
 
-Set `dd_dogstatsd.tcp_enabled` / `dd_apm.tcp_enabled` to `true` to communicate over the network instead of UDS. Daemons on an ECS Managed Instance share a single network namespace (the "daemon bridge"), reachable via a static IP: `169.254.172.2` (IPv4) or `fd00:ec2::172:2` (IPv6). Point your application at the daemon with:
+Set `dd_dogstatsd.tcp_enabled` / `dd_apm.tcp_enabled` to `true` to communicate over the network instead of UDS. Daemons on an ECS Managed Instance share a single network namespace (the "daemon bridge"), reachable via a static IP: `169.254.172.2` (IPv4) or `fd00:ec2::172:2` (IPv6). When UDS is disabled, the `dogstatsd_env_vars` and `apm_env_vars` outputs point your application at the daemon:
 
 ```
-DD_AGENT_HOST=169.254.172.2
+DD_DOGSTATSD_URL=udp://169.254.172.2:8125
+DD_TRACE_AGENT_URL=http://169.254.172.2:8126
 ```
+
+If you enable both UDS and TCP, the outputs use UDS. To use TCP only, set `socket_enabled = false`. You can also set `DD_AGENT_HOST=169.254.172.2` on the application container yourself.
 
 Use a real DogStatsD/APM client library, not a hand-rolled socket sender. Origin detection (container tagging) over this path works by the client library embedding the container ID/inode directly in the packet - a raw socket send omits this field and produces untagged data.
 
@@ -198,6 +201,18 @@ dd_process_collection = {
 ```
 
 This module sets `DD_PROCESS_CONFIG_PROCESS_COLLECTION_ENABLED` when enabled.
+
+## Additional Volumes
+
+Use `volumes` to mount extra host paths in the Agent container. `container_path` defaults to `host_path`. Mounts are read-only unless you set `read_only = false`.
+
+```hcl
+volumes = [
+  { name = "extra-data", host_path = "/data", container_path = "/host/data" },
+]
+```
+
+Volume names may use letters, numbers, underscores, and hyphens. Names and container paths must be unique, and host paths and container paths must be absolute. The module rejects names and paths that it already uses: `containerd_sock`, `proc`, `cgroup`, `dd-sockets`, and `debug`, and `/var/run/containerd/containerd.sock`, `/host/proc`, `/host/sys/fs/cgroup`, `/var/run/datadog`, and `/sys/kernel/debug`.
 
 ## Deployment Configuration
 
@@ -317,13 +332,13 @@ No modules.
 | <a name="input_propagate_tags"></a> [propagate\_tags](#input\_propagate\_tags) | Propagate tags to daemon tasks. Valid values: DAEMON, NONE. Note this differs from the ecs\_ec2 module's TASK\_DEFINITION/SERVICE/NONE options, since aws\_ecs\_daemon only supports DAEMON and NONE. | `string` | `"DAEMON"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of additional tags to add to the daemon task definition/daemon created | `map(string)` | `null` | no |
 | <a name="input_task_role"></a> [task\_role](#input\_task\_role) | The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services. Contains:<br/>  - `arn` (string): The ARN of the IAM role.<br/>  - `add_dd_ecs_permissions` (bool): Whether to automatically add Datadog ECS permissions to the role to fetch a provided Datadog API key secret. | <pre>object({<br/>    arn                    = string<br/>    add_dd_ecs_permissions = optional(bool, true)<br/>  })</pre> | `null` | no |
-| <a name="input_volumes"></a> [volumes](#input\_volumes) | A list of additional host-path volume definitions that containers in your task may use, beyond the ones the module manages. Note: the volume block on aws\_ecs\_daemon\_task\_definition only supports `name` + `host.source_path` - no docker\_volume\_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler. | <pre>list(object({<br/>    name      = string<br/>    host_path = optional(string)<br/>  }))</pre> | `[]` | no |
+| <a name="input_volumes"></a> [volumes](#input\_volumes) | Additional host-path volumes mounted in the Agent container, beyond the ones the module manages. `container_path` defaults to `host_path`. `read_only` defaults to true. Volume names may use letters, numbers, underscores, and hyphens, must be unique, and must not be one of the module-managed volume names: containerd\_sock, proc, cgroup, dd-sockets, debug. Host paths and container paths must be absolute. Container paths must be unique and must not be one of the module-managed paths: /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug. The volume block on aws\_ecs\_daemon\_task\_definition only supports `name` + `host.source_path` - no docker\_volume\_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler. | <pre>list(object({<br/>    name           = string<br/>    host_path      = string<br/>    container_path = optional(string)<br/>    read_only      = optional(bool, true)<br/>  }))</pre> | `[]` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_apm_env_vars"></a> [apm\_env\_vars](#output\_apm\_env\_vars) | Environment variables for APM in user application containers. Provided only when UDS is enabled (dd\_apm.enabled && dd\_apm.socket\_enabled); otherwise an empty list. |
+| <a name="output_apm_env_vars"></a> [apm\_env\_vars](#output\_apm\_env\_vars) | Environment variables for APM in user application containers. When UDS is enabled (dd\_apm.socket\_enabled), provides DD\_TRACE\_AGENT\_URL pointing to the Unix socket. Otherwise, when TCP is enabled (dd\_apm.tcp\_enabled), provides DD\_TRACE\_AGENT\_URL pointing to the daemon bridge IP. Empty when APM is disabled. |
 | <a name="output_app_dd_sockets_mount"></a> [app\_dd\_sockets\_mount](#output\_app\_dd\_sockets\_mount) | Mount point for the shared UDS socket directory. Add this to your application container's mountPoints to enable communication with the Datadog Agent daemon over Unix Domain Sockets. |
 | <a name="output_app_dd_sockets_volume"></a> [app\_dd\_sockets\_volume](#output\_app\_dd\_sockets\_volume) | Volume definition for the shared UDS socket directory. Add this to your application task definition's volumes to enable UDS communication with the Datadog Agent daemon. |
 | <a name="output_arn"></a> [arn](#output\_arn) | Full ARN of the Daemon Task Definition (including both family and revision). |
@@ -332,7 +347,7 @@ No modules.
 | <a name="output_daemon_deployment_arn"></a> [daemon\_deployment\_arn](#output\_daemon\_deployment\_arn) | ARN of the daemon's latest deployment. Only available if create\_daemon = true. |
 | <a name="output_daemon_status"></a> [daemon\_status](#output\_daemon\_status) | Status of the daemon (ACTIVE or DELETE\_IN\_PROGRESS). Only available if create\_daemon = true. |
 | <a name="output_data_streams_env_vars"></a> [data\_streams\_env\_vars](#output\_data\_streams\_env\_vars) | Environment variables for Data Streams Monitoring in user application containers. Only includes values when enabled. |
-| <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD in user application containers. Provided only when UDS is enabled (dd\_dogstatsd.enabled && dd\_dogstatsd.socket\_enabled); otherwise an empty list. |
+| <a name="output_dogstatsd_env_vars"></a> [dogstatsd\_env\_vars](#output\_dogstatsd\_env\_vars) | Environment variables for DogStatsD in user application containers. When UDS is enabled (dd\_dogstatsd.socket\_enabled), provides DD\_DOGSTATSD\_URL pointing to the Unix socket. Otherwise, when TCP is enabled (dd\_dogstatsd.tcp\_enabled), provides DD\_DOGSTATSD\_URL pointing to the daemon bridge IP. Empty when DogStatsD is disabled. |
 | <a name="output_execution_role_arn"></a> [execution\_role\_arn](#output\_execution\_role\_arn) | ARN of the task execution role. |
 | <a name="output_family"></a> [family](#output\_family) | A unique name for your daemon task definition. |
 | <a name="output_profiling_env_vars"></a> [profiling\_env\_vars](#output\_profiling\_env\_vars) | Environment variables for continuous profiling in user application containers. Only includes values when enabled. |
