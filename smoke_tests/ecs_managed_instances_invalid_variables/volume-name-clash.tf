@@ -17,3 +17,31 @@ module "volume_name_clash" {
 
   create_daemon = false
 }
+
+# A user volume mounted at a module-managed path must fail variable validation.
+module "volume_path_clash" {
+  source = "../../modules/ecs_managed_instances"
+
+  dd_api_key = var.dd_api_key
+  family     = "${var.test_prefix}-volume-path-clash"
+
+  volumes = [
+    { name = "extra", host_path = "/tmp/extra", container_path = "/host/proc" },
+  ]
+
+  create_daemon = false
+}
+
+# A relative container_path must fail variable validation.
+module "volume_relative_path" {
+  source = "../../modules/ecs_managed_instances"
+
+  dd_api_key = var.dd_api_key
+  family     = "${var.test_prefix}-volume-relative-path"
+
+  volumes = [
+    { name = "extra", host_path = "/tmp/extra", container_path = "data" },
+  ]
+
+  create_daemon = false
+}

@@ -202,6 +202,18 @@ dd_process_collection = {
 
 This module sets `DD_PROCESS_CONFIG_PROCESS_COLLECTION_ENABLED` when enabled.
 
+## Additional Volumes
+
+Use `volumes` to mount extra host paths in the Agent container. A volume is mounted only when `container_path` is set. Mounts are read-only unless you set `read_only = false`.
+
+```hcl
+volumes = [
+  { name = "extra-data", host_path = "/data", container_path = "/host/data" },
+]
+```
+
+Volume names and container paths must be unique. The module rejects names and paths that it already uses: `containerd_sock`, `proc`, `cgroup`, `dd-sockets`, and `debug`, and `/var/run/containerd/containerd.sock`, `/host/proc`, `/host/sys/fs/cgroup`, `/var/run/datadog`, and `/sys/kernel/debug`.
+
 ## Deployment Configuration
 
 Controls how the daemon rolls out changes across instances:
@@ -320,7 +332,7 @@ No modules.
 | <a name="input_propagate_tags"></a> [propagate\_tags](#input\_propagate\_tags) | Propagate tags to daemon tasks. Valid values: DAEMON, NONE. Note this differs from the ecs\_ec2 module's TASK\_DEFINITION/SERVICE/NONE options, since aws\_ecs\_daemon only supports DAEMON and NONE. | `string` | `"DAEMON"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of additional tags to add to the daemon task definition/daemon created | `map(string)` | `null` | no |
 | <a name="input_task_role"></a> [task\_role](#input\_task\_role) | The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services. Contains:<br/>  - `arn` (string): The ARN of the IAM role.<br/>  - `add_dd_ecs_permissions` (bool): Whether to automatically add Datadog ECS permissions to the role to fetch a provided Datadog API key secret. | <pre>object({<br/>    arn                    = string<br/>    add_dd_ecs_permissions = optional(bool, true)<br/>  })</pre> | `null` | no |
-| <a name="input_volumes"></a> [volumes](#input\_volumes) | Additional host-path volumes added to the daemon task, beyond the ones the module manages. The Agent container does not mount them. Names must be unique and must not be one of the module-managed volume names: containerd\_sock, proc, cgroup, dd-sockets, debug. The volume block on aws\_ecs\_daemon\_task\_definition only supports `name` + `host.source_path` - no docker\_volume\_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler. | <pre>list(object({<br/>    name      = string<br/>    host_path = optional(string)<br/>  }))</pre> | `[]` | no |
+| <a name="input_volumes"></a> [volumes](#input\_volumes) | Additional host-path volumes added to the daemon task, beyond the ones the module manages. A volume is mounted in the Agent container only when `container_path` is set. `read_only` defaults to true. Volume names must be unique and must not be one of the module-managed volume names: containerd\_sock, proc, cgroup, dd-sockets, debug. Container paths must be absolute, unique, and must not be one of the module-managed paths: /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug. The volume block on aws\_ecs\_daemon\_task\_definition only supports `name` + `host.source_path` - no docker\_volume\_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler. | <pre>list(object({<br/>    name           = string<br/>    host_path      = optional(string)<br/>    container_path = optional(string)<br/>    read_only      = optional(bool, true)<br/>  }))</pre> | `[]` | no |
 
 ## Outputs
 

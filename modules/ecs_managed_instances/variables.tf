@@ -313,10 +313,12 @@ variable "tags" {
 }
 
 variable "volumes" {
-  description = "Additional host-path volumes added to the daemon task, beyond the ones the module manages. The Agent container does not mount them. Names must be unique and must not be one of the module-managed volume names: containerd_sock, proc, cgroup, dd-sockets, debug. The volume block on aws_ecs_daemon_task_definition only supports `name` + `host.source_path` - no docker_volume_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler."
+  description = "Additional host-path volumes added to the daemon task, beyond the ones the module manages. A volume is mounted in the Agent container only when `container_path` is set. `read_only` defaults to true. Volume names must be unique and must not be one of the module-managed volume names: containerd_sock, proc, cgroup, dd-sockets, debug. Container paths must be absolute, unique, and must not be one of the module-managed paths: /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug. The volume block on aws_ecs_daemon_task_definition only supports `name` + `host.source_path` - no docker_volume_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler."
   type = list(object({
-    name      = string
-    host_path = optional(string)
+    name           = string
+    host_path      = optional(string)
+    container_path = optional(string)
+    read_only      = optional(bool, true)
   }))
   default = []
 
@@ -328,6 +330,21 @@ variable "volumes" {
   validation {
     condition     = length(distinct([for v in var.volumes : v.name])) == length(var.volumes)
     error_message = "Volume names must be unique."
+  }
+
+  validation {
+    condition     = alltrue([for v in var.volumes : v.container_path == null || startswith(coalesce(v.container_path, "x"), "/")])
+    error_message = "A volume container_path must be an absolute path."
+  }
+
+  validation {
+    condition     = length(setintersection([for v in var.volumes : v.container_path if v.container_path != null], ["/var/run/containerd/containerd.sock", "/host/proc", "/host/sys/fs/cgroup", "/var/run/datadog", "/sys/kernel/debug"])) == 0
+    error_message = "A volume container_path clashes with a module-managed mount path. The paths /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, and /sys/kernel/debug are reserved."
+  }
+
+  validation {
+    condition     = length(distinct([for v in var.volumes : v.container_path if v.container_path != null])) == length([for v in var.volumes : v.container_path if v.container_path != null])
+    error_message = "Volume container_path values must be unique."
   }
 }
 

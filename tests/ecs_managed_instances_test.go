@@ -311,8 +311,27 @@ func TestInvalidVariables(t *testing.T) {
 	}
 
 	normalizedErr := strings.Join(strings.Fields(err.Error()), " ")
-	expected := "A volume name clashes with a module-managed volume"
-	if !strings.Contains(normalizedErr, expected) {
-		t.Errorf("expected plan error to contain %q, got: %s", expected, err.Error())
+	for _, expected := range []string{
+		"A volume name clashes with a module-managed volume",
+		"A volume container_path clashes with a module-managed mount path",
+		"A volume container_path must be an absolute path",
+	} {
+		if !strings.Contains(normalizedErr, expected) {
+			t.Errorf("expected plan error to contain %q, got: %s", expected, err.Error())
+		}
+	}
+}
+
+// TestUserVolumes verifies user volumes are mounted only when container_path
+// is set, and are read-only unless read_only = false.
+func (s *ECSManagedInstancesSuite) TestUserVolumes() {
+	log.Println("TestUserVolumes: Running test...")
+
+	container := s.unmarshalMIContainer("user_volumes_container_definition")
+
+	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "ro-data", ContainerPath: "/host/data/ro", ReadOnly: true})
+	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "rw-data", ContainerPath: "/host/data/rw", ReadOnly: false})
+	for _, m := range container.MountPoint {
+		s.NotEqual("unmounted", m.SourceVolume, "a volume without container_path must not be mounted")
 	}
 }

@@ -133,17 +133,29 @@ locals {
 ################################################################################
 
 locals {
+  user_volumes = [for v in var.volumes : { name = v.name, host_path = v.host_path }]
+
+  # A user volume is mounted only when it has a container_path.
+  user_mounts = [
+    for v in var.volumes : {
+      source_volume  = v.name
+      container_path = v.container_path
+      read_only      = v.read_only
+    } if v.container_path != null
+  ]
+
   all_volumes = concat(
     local.cri_volumes,
     local.apm_dsd_volume,
     local.network_monitoring_volume,
-    var.volumes,
+    local.user_volumes,
   )
 
   dd_agent_mount = concat(
     local.cri_mounts,
     local.apm_dsd_mount,
     local.network_monitoring_mount,
+    local.user_mounts,
   )
 }
 
