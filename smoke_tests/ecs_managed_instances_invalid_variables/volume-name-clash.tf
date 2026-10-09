@@ -45,3 +45,31 @@ module "volume_relative_path" {
 
   create_daemon = false
 }
+
+# A relative host_path must fail variable validation.
+module "volume_relative_host_path" {
+  source = "../../modules/ecs_managed_instances"
+
+  dd_api_key = var.dd_api_key
+  family     = "${var.test_prefix}-volume-relative-host-path"
+
+  volumes = [
+    { name = "extra", host_path = "data" },
+  ]
+
+  create_daemon = false
+}
+
+# A volume name with invalid characters must fail variable validation.
+module "volume_bad_name" {
+  source = "../../modules/ecs_managed_instances"
+
+  dd_api_key = var.dd_api_key
+  family     = "${var.test_prefix}-volume-bad-name"
+
+  volumes = [
+    { name = "bad name", host_path = "/data" },
+  ]
+
+  create_daemon = false
+}

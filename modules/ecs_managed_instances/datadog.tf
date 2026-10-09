@@ -135,13 +135,13 @@ locals {
 locals {
   user_volumes = [for v in var.volumes : { name = v.name, host_path = v.host_path }]
 
-  # A user volume is mounted only when it has a container_path.
+  # Every user volume is mounted; container_path defaults to host_path.
   user_mounts = [
     for v in var.volumes : {
       source_volume  = v.name
-      container_path = v.container_path
+      container_path = coalesce(v.container_path, v.host_path)
       read_only      = v.read_only
-    } if v.container_path != null
+    }
   ]
 
   all_volumes = concat(

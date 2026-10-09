@@ -3,8 +3,8 @@
 # This product includes software developed at Datadog (https://www.datadoghq.com/).
 # Copyright 2025-present Datadog, Inc.
 
-# User volumes: one mounted read-only by default, one mounted read-write, and
-# one defined without a container_path (volume only, not mounted).
+# User volumes: one mounted read-only at a custom container path, one mounted
+# read-write, and one with no container_path (mounted at its host path).
 module "user_volumes" {
   source = "../../modules/ecs_managed_instances"
 
@@ -15,7 +15,7 @@ module "user_volumes" {
   volumes = [
     { name = "ro-data", host_path = "/data/ro", container_path = "/host/data/ro" },
     { name = "rw-data", host_path = "/data/rw", container_path = "/host/data/rw", read_only = false },
-    { name = "unmounted", host_path = "/data/unmounted" },
+    { name = "same-path", host_path = "/data/same" },
   ]
 
   create_daemon = false
