@@ -14,6 +14,7 @@ resource "aws_ecs_task_definition" "this" {
       local.dd_agent_container,
       local.dd_log_container,
       local.dd_cws_container,
+      local.dd_tracer_container,
       [for k, v in local.modified_container_definitions : v],
     )
   )
@@ -156,6 +157,7 @@ resource "aws_ecs_task_definition" "this" {
   tags = merge(
     var.tags,
     local.tags,
+    local.apm_tags,
   )
 
   track_latest = var.track_latest
@@ -180,6 +182,14 @@ resource "aws_ecs_task_definition" "this" {
     precondition {
       condition     = var.dd_readonly_root_filesystem == false || (var.dd_readonly_root_filesystem == true && local.is_linux == true)
       error_message = "Readonly root filesystem is only supported on Linux. Please set `dd_readonly_root_filesystem` to `false`."
+    }
+    precondition {
+      condition     = !local.apm_requested || local.is_linux
+      error_message = "Automatic APM instrumentation is only supported on Linux. Please set `dd_apm_instrumentation` to `null`."
+    }
+    precondition {
+      condition     = !(try(var.dd_apm_instrumentation.language, null) == "dotnet" && local.apm_is_arm64)
+      error_message = ".NET automatic APM instrumentation is not supported on ARM64. Please use an X86_64 task or set `dd_apm_instrumentation` to `null`."
     }
     # Must provide only one of the two Datadog API key options
     precondition {

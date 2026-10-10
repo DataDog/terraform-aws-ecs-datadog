@@ -7,6 +7,7 @@ This Terraform module wraps the [aws_ecs_task_definition](https://registry.terra
 - Adding the Datadog Agent container
   - Optionally, the Fluentbit log router
   - Optionally, the Cloud Workload Security tracer
+  - Optionally, the Datadog APM tracer for automatic APM instrumentation
 - Configuring application containers with necessary volume mounts, environment variables, and log drivers
 - Configuring task role and execution role to have proper permissions for Datadog
 - Enabling the collection of metrics, traces, and logs to Datadog
@@ -216,6 +217,31 @@ The `dd_apm` configuration block controls the Datadog Trace Agent, which collect
 
 For the full list of configuration options, reference the [inputs](#inputs).
 
+#### Automatic APM Instrumentation
+
+The `dd_apm_instrumentation` configuration block adds the Datadog tracer to one of your application containers, so you can trace your application without changing its image.
+
+```hcl
+dd_apm_instrumentation = {
+  language = "python"
+}
+```
+
+*   `language` (required): The application language: `java`, `js`, `dotnet`, `python`, `ruby`, or `php`.
+*   `container_name` (optional): The application container to instrument. Required when the task definition has more than one application container.
+*   `tracer_version` (default: `latest`): The tracer version to use. .NET versions before 3.0 are not supported.
+*   `tracer_libc` (default: `glibc`): The C standard library of your application image: `glibc` or `musl`. Ruby does not support `musl`.
+
+The module adds a `datadog-tracer` container that copies the tracer into a shared volume, and starts your application container after the copy succeeds. The tracer settings are added to your existing values of variables such as `NODE_OPTIONS`, `PYTHONPATH`, and `JAVA_TOOL_OPTIONS` instead of replacing them.
+
+The `datadog-tracer` container sends its logs to Datadog when log collection is enabled. Otherwise, it uses the first `awslogs` log configuration of your application containers.
+
+If the module can't select the container to instrument or can't safely update its settings, `terraform plan` shows a warning and the module doesn't add the tracer. To avoid conflicts, don't use the `datadog-tracer` container or volume name, or the `/datadog-lib` path, in your own configuration.
+
+Automatic APM instrumentation is supported only on Linux, and .NET isn't supported on ARM64. For Go applications, install the tracer in your application image instead.
+
+Java 24 and later can print warnings about native access. To suppress them, add `--illegal-native-access=allow --sun-misc-unsafe-memory-access=allow` to `JAVA_TOOL_OPTIONS` on the instrumented container. Earlier Java versions don't support these options, so the module doesn't add them.
+
 #### Log Collection
 
 The `dd_log_collection` configuration block sets up log collection using the [AWS FireLens log driver](https://docs.datadoghq.com/integrations/aws-fargate/?tab=webui#log-collection) with Fluent Bit.
@@ -271,6 +297,7 @@ No modules.
 | <a name="input_dd_api_key"></a> [dd\_api\_key](#input\_dd\_api\_key) | Datadog API Key | `string` | `null` | no |
 | <a name="input_dd_api_key_secret"></a> [dd\_api\_key\_secret](#input\_dd\_api\_key\_secret) | Datadog API Key Secret ARN | <pre>object({<br/>    arn = string<br/>  })</pre> | `null` | no |
 | <a name="input_dd_apm"></a> [dd\_apm](#input\_dd\_apm) | Configuration for Datadog APM | <pre>object({<br/>    enabled                       = optional(bool, true)<br/>    socket_enabled                = optional(bool, true)<br/>    profiling                     = optional(bool, false)<br/>    trace_inferred_proxy_services = optional(bool, false)<br/>    data_streams                  = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "data_streams_enabled": false,<br/>  "enabled": true,<br/>  "profiling": false,<br/>  "socket_enabled": true,<br/>  "trace_inferred_proxy_services": false<br/>}</pre> | no |
+| <a name="input_dd_apm_instrumentation"></a> [dd\_apm\_instrumentation](#input\_dd\_apm\_instrumentation) | Configuration for Datadog automatic APM instrumentation, which adds the Datadog tracer to an application container without changing its image. Defaults to disabled. Contains:<br/>  - `language` (string): The application language: `java`, `js`, `dotnet`, `python`, `ruby`, or `php`.<br/>  - `container_name` (string): The application container to instrument. Required when the task definition has more than one application container.<br/>  - `tracer_version` (string): The tracer version. Defaults to `latest`. .NET versions before 3.0 are not supported.<br/>  - `tracer_libc` (string): The C standard library of the application image: `glibc` (default) or `musl`. Ruby does not support `musl`. | <pre>object({<br/>    language       = string<br/>    container_name = optional(string)<br/>    tracer_version = optional(string, "latest")<br/>    tracer_libc    = optional(string, "glibc")<br/>  })</pre> | `null` | no |
 | <a name="input_dd_checks_cardinality"></a> [dd\_checks\_cardinality](#input\_dd\_checks\_cardinality) | Datadog Agent checks cardinality | `string` | `null` | no |
 | <a name="input_dd_cluster_name"></a> [dd\_cluster\_name](#input\_dd\_cluster\_name) | Datadog cluster name | `string` | `null` | no |
 | <a name="input_dd_cpu"></a> [dd\_cpu](#input\_dd\_cpu) | Datadog Agent container CPU units | `number` | `null` | no |

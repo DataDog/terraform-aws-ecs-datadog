@@ -194,19 +194,26 @@ locals {
     }
   ] : []
 
+  application_containers = jsondecode(var.container_definitions)
+
   modified_container_definitions = [
-    for container in jsondecode(var.container_definitions) : merge(
+    for index, container in local.application_containers : merge(
       container,
       # Note: only configure CWS on container if entryPoint is set
       {
         # Append new environment variables to any existing ones.
+        # The instrumented container's tracer settings replace their existing entries.
         environment = concat(
-          lookup(container, "environment", []),
+          [
+            for env in lookup(container, "environment", []) : env
+            if !(index == local.apm_instrumented_index && contains(local.apm_owned_env_names, try(env.name, "")))
+          ],
           local.dsd_socket_var,
           local.apm_socket_var,
           local.dsd_port_var,
           local.ust_env_vars,
           local.application_env_vars,
+          index == local.apm_instrumented_index ? local.apm_target_env_vars : [],
         ),
         # Merge UST docker labels with any existing docker labels.
         dockerLabels = merge(
@@ -218,12 +225,14 @@ locals {
           lookup(container, "mountPoints", []),
           local.apm_dsd_mount,
           local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? local.cws_mount : [],
+          index == local.apm_instrumented_index ? [local.tracer_mount] : [],
         )
         dependsOn = concat(
           lookup(container, "dependsOn", []),
           local.agent_dependency,
           local.log_router_dependency,
           local.is_cws_supported && lookup(container, "entryPoint", []) != [] ? local.cws_dependency : [],
+          index == local.apm_instrumented_index ? [local.tracer_dependency] : [],
         )
       },
       # Only override the log configuration if the Datadog firelens configuration exists
@@ -280,6 +289,7 @@ locals {
     local.rofs_volumes,
     local.apm_dsd_volume,
     local.cws_volume,
+    local.tracer_volume,
   )
 
   # Datadog Agent container environment variables
