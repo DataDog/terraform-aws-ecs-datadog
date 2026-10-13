@@ -90,7 +90,7 @@ func (s *ECSManagedInstancesSuite) TestDefaultConfiguration() {
 	expectedEnvVars := map[string]string{
 		"ECS_MANAGED_INSTANCES":          "true",
 		"DD_INSTALL_INFO_TOOL":           "terraform",
-		"DD_INSTALL_INFO_TOOL_VERSION":   "terraform-aws-ecs-datadog",
+		"DD_INSTALL_INFO_TOOL_VERSION":   "terraform-aws-ecs-datadog/ecs-managed-instances",
 		"DD_API_KEY":                     "test-api-key",
 		"DD_SITE":                        "datadoghq.com",
 		"DD_CRI_SOCKET_PATH":             "/var/run/containerd/containerd.sock",

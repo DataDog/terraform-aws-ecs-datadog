@@ -9,7 +9,7 @@ locals {
   version = "1.1.1"
 
   install_info_tool              = "terraform"
-  install_info_tool_version      = "terraform-aws-ecs-datadog"
+  install_info_tool_version      = "terraform-aws-ecs-datadog/ecs-fargate"
   install_info_installer_version = local.version
 
   # AWS Resource Tags
