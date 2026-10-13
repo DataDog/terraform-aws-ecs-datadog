@@ -46,7 +46,7 @@ func (s *ECSFargateSuite) TestLoggingOnly() {
 		"DD_ECS_TASK_COLLECTION_ENABLED": "true",
 		"ECS_FARGATE":                    "true",
 		"DD_INSTALL_INFO_TOOL":           "terraform",
-		"DD_INSTALL_INFO_TOOL_VERSION":   "terraform-aws-ecs-datadog",
+		"DD_INSTALL_INFO_TOOL_VERSION":   "terraform-aws-ecs-datadog/ecs-fargate",
 	}
 	AssertEnvVars(s.T(), agentContainer, expectedAgentEnvVars)
 

@@ -49,7 +49,7 @@ func (s *ECSFargateSuite) TestAllDDInputs() {
 
 	expectedAgentEnvvars := map[string]string{
 		"DD_DOGSTATSD_ORIGIN_DETECTION_CLIENT":         "true",
-		"DD_INSTALL_INFO_TOOL_VERSION":                 "terraform-aws-ecs-datadog",
+		"DD_INSTALL_INFO_TOOL_VERSION":                 "terraform-aws-ecs-datadog/ecs-fargate",
 		"DD_DOGSTATSD_ORIGIN_DETECTION":                "true",
 		"DD_RUNTIME_SECURITY_CONFIG_ENABLED":           "true",
 		"DD_DOGSTATSD_TAG_CARDINALITY":                 "high",
