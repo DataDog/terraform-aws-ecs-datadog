@@ -66,7 +66,7 @@ variable "dd_is_datadog_dependency_enabled" {
 }
 
 variable "dd_readonly_root_filesystem" {
-  description = "Datadog Agent container runs with read-only root filesystem enabled"
+  description = "Whether the Datadog Agent, log router, and APM tracer containers run with a read-only root filesystem"
   type        = bool
   default     = false
   nullable    = false
@@ -196,7 +196,7 @@ variable "dd_apm" {
 }
 
 variable "dd_apm_instrumentation" {
-  description = "Configuration for Datadog automatic APM instrumentation, which adds the Datadog tracer to an application container without changing its image. Defaults to disabled. Contains:\n  - `language` (string): The application language: `java`, `js`, `dotnet`, `python`, `ruby`, or `php`.\n  - `container_name` (string): The application container to instrument. Required when the task definition has more than one application container.\n  - `tracer_version` (string): The tracer version. Defaults to `latest`. .NET versions before 3.0 are not supported.\n  - `tracer_libc` (string): The C standard library of the application image: `glibc` (default) or `musl`. Ruby does not support `musl`."
+  description = "Configuration for Datadog automatic APM instrumentation"
   type = object({
     language       = string
     container_name = optional(string)
