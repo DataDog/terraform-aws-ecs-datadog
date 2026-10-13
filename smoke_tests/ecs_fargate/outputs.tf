@@ -22,6 +22,10 @@ output "apm-dsd-tcp-udp" {
   value = module.dd_task_apm_dsd_tcp_udp
 }
 
+output "apm-instrumentation" {
+  value = module.dd_task_apm_instrumentation
+}
+
 output "cws-only" {
   value = module.dd_task_cws_only
 }
