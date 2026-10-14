@@ -293,27 +293,6 @@ check "apm_target_container_exists" {
   }
 }
 
-check "apm_target_container_known" {
-  assert {
-    condition     = !local.apm_requested || local.apm_container_name == "" || length(local.apm_named_candidates) > 0
-    error_message = "`dd_apm_instrumentation.container_name` is '${local.apm_container_name}', but no application container has that name. Choose one of: ${join(", ", local.apm_candidate_names)}. The module doesn't add the tracer."
-  }
-}
-
-check "apm_target_container_not_ambiguous" {
-  assert {
-    condition     = !local.apm_requested || local.apm_container_name != "" || length(local.apm_candidates) <= 1
-    error_message = "The task definition has several application containers: ${join(", ", local.apm_candidate_names)}. Set `dd_apm_instrumentation.container_name` to the one to instrument. The module doesn't add the tracer."
-  }
-}
-
-check "apm_env_not_secret_backed" {
-  assert {
-    condition     = !local.apm_requested || length(local.apm_secret_env_names) == 0
-    error_message = "The container to instrument sets ${join(", ", local.apm_secret_env_names)} from `secrets`, so the module can't add the tracer settings. Set these variables in `environment` instead, or remove them. The module doesn't add the tracer."
-  }
-}
-
 check "apm_env_not_duplicated" {
   assert {
     condition     = !local.apm_requested || length(local.apm_duplicate_env_names) == 0

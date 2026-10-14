@@ -236,7 +236,6 @@ The module adds a `datadog-tracer` container that copies the tracer into a share
 
 The `datadog-tracer` container sends its logs to Datadog when log collection is enabled. Otherwise, it uses the first `awslogs` log configuration of your application containers.
 
-If the module can't select the container to instrument or can't safely update its settings, `terraform plan` shows a warning and the module doesn't add the tracer. To avoid conflicts, don't use the `datadog-tracer` container or volume name, or the `/datadog-lib` path, in your own configuration.
 
 Automatic APM instrumentation is supported only on Linux, and .NET isn't supported on ARM64. For Go applications, install the tracer in your application image instead.
 
