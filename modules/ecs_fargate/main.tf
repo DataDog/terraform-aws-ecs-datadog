@@ -199,18 +199,6 @@ resource "aws_ecs_task_definition" "this" {
       condition     = !local.apm_injection_requested || length(local.apm_secret_env_names) == 0
       error_message = "The container to instrument sets ${join(", ", local.apm_secret_env_names)} from `secrets`, so the module can't add the tracer settings. Set these variables in `environment` instead, or remove them."
     }
-    precondition {
-      condition     = !local.apm_requested || local.apm_container_name == "" || length(local.apm_named_candidates) > 0
-      error_message = "`dd_apm_instrumentation.container_name` is '${local.apm_container_name}', but no application container has that name. Choose one of: ${join(", ", local.apm_candidate_names)}."
-    }
-    precondition {
-      condition     = !local.apm_requested || local.apm_container_name != "" || length(local.apm_candidates) <= 1
-      error_message = "The task definition has several application containers: ${join(", ", local.apm_candidate_names)}. Set `dd_apm_instrumentation.container_name` to the one to instrument."
-    }
-    precondition {
-      condition     = !local.apm_requested || length(local.apm_secret_env_names) == 0
-      error_message = "The container to instrument sets ${join(", ", local.apm_secret_env_names)} from `secrets`, so the module can't add the tracer settings. Set these variables in `environment` instead, or remove them."
-    }
     # Must provide only one of the two Datadog API key options
     precondition {
       condition     = (var.dd_api_key == null && var.dd_api_key_secret != null) || (var.dd_api_key != null && var.dd_api_key_secret == null)
