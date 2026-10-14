@@ -20,11 +20,13 @@ var (
 	MountAgentConfig    = types.MountPoint{SourceVolume: aws.String("agent-config"), ContainerPath: aws.String("/etc/datadog-agent"), ReadOnly: aws.Bool(false)}
 	MountAgentTmp       = types.MountPoint{SourceVolume: aws.String("agent-tmp"), ContainerPath: aws.String("/tmp"), ReadOnly: aws.Bool(false)}
 	MountAgentRun       = types.MountPoint{SourceVolume: aws.String("agent-run"), ContainerPath: aws.String("/opt/datadog-agent/run"), ReadOnly: aws.Bool(false)}
+	MountTracer         = types.MountPoint{SourceVolume: aws.String("datadog-tracer"), ContainerPath: aws.String("/datadog-lib"), ReadOnly: aws.Bool(false)}
 	PortTCP             = types.PortMapping{ContainerPort: aws.Int32(8126), HostPort: aws.Int32(8126), Protocol: types.TransportProtocolTcp}
 	PortUDP             = types.PortMapping{ContainerPort: aws.Int32(8125), HostPort: aws.Int32(8125), Protocol: types.TransportProtocolUdp}
 	DependencyAgent     = types.ContainerDependency{ContainerName: aws.String("datadog-agent"), Condition: types.ContainerConditionHealthy}
 	DependencyCWS       = types.ContainerDependency{ContainerName: aws.String("cws-instrumentation-init"), Condition: types.ContainerConditionSuccess}
 	DependencyLogRouter = types.ContainerDependency{ContainerName: aws.String("datadog-log-router"), Condition: types.ContainerConditionHealthy}
+	DependencyTracer    = types.ContainerDependency{ContainerName: aws.String("datadog-tracer"), Condition: types.ContainerConditionSuccess}
 )
 
 // GetContainer retrieves a container definition by name
