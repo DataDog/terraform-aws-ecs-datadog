@@ -22,6 +22,7 @@ const (
 	defaultRegion = "eu-central-1"
 	defaultSite   = "datadoghq.com"
 	// Pinned so an Agent release can't fail the suite. Override with E2E_AGENT_IMAGE_VERSION.
+	// The tracer stays on latest on purpose so a tracer release that breaks injection fails the suite.
 	defaultAgentImageVersion = "7.84.2"
 )
 
