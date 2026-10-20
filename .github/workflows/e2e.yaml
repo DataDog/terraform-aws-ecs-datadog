@@ -1,0 +1,75 @@
+name: E2E Tests
+
+permissions:
+  contents: read
+
+# Full instrumentation lifecycle against a live, ephemeral ECS Fargate service.
+on:
+  pull_request:
+    paths:
+      - "modules/ecs_fargate/**"
+      - "e2e/**"
+      - ".github/workflows/e2e.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/ecs_fargate/**"
+      - "e2e/**"
+      - ".github/workflows/e2e.yaml"
+  workflow_dispatch:
+
+jobs:
+  ecs-fargate-e2e:
+    name: Run ECS Fargate E2E Tests
+    # Fork pull requests can't use this repository's OIDC role, and the suite needs the ECS
+    # resources that the AWS_ECS_*_E2E repository variables name.
+    if: vars.AWS_ECS_CLUSTER_E2E != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: eu-central-1
+      DD_SITE: ${{ vars.DD_SITE_E2E || 'datadoghq.com' }}
+      AWS_ECS_CLUSTER: ${{ vars.AWS_ECS_CLUSTER_E2E }}
+      AWS_ECS_SUBNETS: ${{ vars.AWS_ECS_SUBNETS_E2E }}
+      AWS_ECS_SECURITY_GROUP: ${{ vars.AWS_ECS_SECURITY_GROUP_E2E }}
+      AWS_ECS_EXECUTION_ROLE_ARN: ${{ vars.AWS_ECS_EXECUTION_ROLE_ARN_E2E }}
+      AWS_ECS_TASK_ROLE_ARN: ${{ vars.AWS_ECS_TASK_ROLE_ARN_E2E }}
+      AWS_ECS_APP_IMAGE_REGISTRY: ${{ vars.AWS_ECS_APP_IMAGE_REGISTRY_E2E }}
+      AWS_ECS_API_KEY_SECRET_ARN: ${{ vars.AWS_ECS_API_KEY_SECRET_ARN_E2E }}
+      AWS_ECS_LOG_GROUP: ${{ vars.AWS_ECS_LOG_GROUP_E2E }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: e2e/go.mod
+          cache-dependency-path: e2e/go.sum
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2 v3
+        with:
+          terraform_version: 1.6.6
+          terraform_wrapper: false # Terratest parses raw terraform output
+
+      # GitHub OIDC role in the serverless sandbox account. See serverless-ci/e2e/terraform/aws/oidc-roles.tf.
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN_E2E }}
+          aws-region: eu-central-1
+
+      # A test timeout skips the deferred destroy, so it only catches a hang. The serverless-ci
+      # sweeper deletes anything left behind.
+      - name: Run e2e tests
+        working-directory: e2e
+        run: go test -count=1 -v -timeout 50m .
+        env:
+          # Used to query spans and logs. The Agent reads its own key from AWS_ECS_API_KEY_SECRET_ARN.
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
