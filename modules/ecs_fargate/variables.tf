@@ -66,7 +66,7 @@ variable "dd_is_datadog_dependency_enabled" {
 }
 
 variable "dd_readonly_root_filesystem" {
-  description = "Datadog Agent container runs with read-only root filesystem enabled"
+  description = "Whether the Datadog Agent, log router, and APM tracer containers run with a read-only root filesystem"
   type        = bool
   default     = false
   nullable    = false
@@ -192,6 +192,47 @@ variable "dd_apm" {
   validation {
     condition     = var.dd_apm != null
     error_message = "The Datadog APM configuration must be defined."
+  }
+}
+
+variable "dd_apm_instrumentation" {
+  description = "Configuration for Datadog automatic APM instrumentation"
+  type = object({
+    language       = string
+    container_name = optional(string)
+    tracer_version = optional(string, "latest")
+    tracer_libc    = optional(string, "glibc")
+  })
+  default = null
+  validation {
+    condition = var.dd_apm_instrumentation == null ? true : try(contains(
+      ["java", "js", "dotnet", "python", "ruby", "php"],
+      var.dd_apm_instrumentation.language,
+    ), false)
+    error_message = "The Datadog APM instrumentation language must be one of 'java', 'js', 'dotnet', 'python', 'ruby', or 'php'."
+  }
+  validation {
+    condition = var.dd_apm_instrumentation == null ? true : contains(
+      ["glibc", "musl"],
+      var.dd_apm_instrumentation.tracer_libc,
+    )
+    error_message = "The Datadog APM instrumentation tracer_libc must be one of 'glibc' or 'musl'."
+  }
+  validation {
+    condition = var.dd_apm_instrumentation == null ? true : !(
+      var.dd_apm_instrumentation.language == "ruby" &&
+      var.dd_apm_instrumentation.tracer_libc == "musl"
+    )
+    error_message = "Ruby automatic APM instrumentation does not support musl. Use tracer_libc = 'glibc', or install the tracer in your application image."
+  }
+  validation {
+    condition = var.dd_apm_instrumentation == null ? true : (
+      var.dd_apm_instrumentation.language != "dotnet" ? true : (
+        length(regexall("^v?([0-9]+)([.]|$)", var.dd_apm_instrumentation.tracer_version)) == 0 ? true :
+        tonumber(regexall("^v?([0-9]+)([.]|$)", var.dd_apm_instrumentation.tracer_version)[0][0]) >= 3
+      )
+    )
+    error_message = "Unsupported .NET tracer_version. Versions before 3.0 require architecture-specific package paths. Use tracer_version 'latest' or a 3.x or later tag."
   }
 }
 

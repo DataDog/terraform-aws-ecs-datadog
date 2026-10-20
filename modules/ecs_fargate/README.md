@@ -7,6 +7,7 @@ This Terraform module wraps the [aws_ecs_task_definition](https://registry.terra
 - Adding the Datadog Agent container
   - Optionally, the Fluentbit log router
   - Optionally, the Cloud Workload Security tracer
+  - Optionally, the Datadog APM tracer for automatic APM instrumentation
 - Configuring application containers with necessary volume mounts, environment variables, and log drivers
 - Configuring task role and execution role to have proper permissions for Datadog
 - Enabling the collection of metrics, traces, and logs to Datadog
@@ -216,6 +217,30 @@ The `dd_apm` configuration block controls the Datadog Trace Agent, which collect
 
 For the full list of configuration options, reference the [inputs](#inputs).
 
+#### Automatic APM Instrumentation
+
+The `dd_apm_instrumentation` configuration block adds the Datadog tracer to one of your application containers, so you can trace your application without changing its image.
+
+```hcl
+dd_apm_instrumentation = {
+  language = "python"
+}
+```
+
+*   `language` (required): The application language: `java`, `js`, `dotnet`, `python`, `ruby`, or `php`.
+*   `container_name` (optional): The application container to instrument. Required when the task definition has more than one application container.
+*   `tracer_version` (default: `latest`): The tracer version to use. .NET versions before 3.0 are not supported.
+*   `tracer_libc` (default: `glibc`): The C standard library of your application image: `glibc` or `musl`. Ruby does not support `musl`.
+
+The module adds a `datadog-tracer` container that copies the tracer into a shared volume, and starts your application container after the copy succeeds. The tracer settings are added to the values of variables such as `NODE_OPTIONS`, `PYTHONPATH`, and `JAVA_TOOL_OPTIONS` that you set in the container's `environment`, instead of replacing them. Values of these variables that you set in your image or in an environment file are overridden, so copy them to `environment`.
+
+The `datadog-tracer` container sends its logs to Datadog when log collection is enabled. Otherwise, it uses the first `awslogs` log configuration of your application containers. If neither is available, `terraform plan` shows a warning.
+
+
+Automatic APM instrumentation is supported only on Linux. For Go applications, install the tracer in your application image instead.
+
+Java 24 and later can print warnings about native access. To suppress them, add `--illegal-native-access=allow --sun-misc-unsafe-memory-access=allow` to `JAVA_TOOL_OPTIONS` on the instrumented container. Earlier Java versions don't support these options, so the module doesn't add them.
+
 #### Log Collection
 
 The `dd_log_collection` configuration block sets up log collection using the [AWS FireLens log driver](https://docs.datadoghq.com/integrations/aws-fargate/?tab=webui#log-collection) with Fluent Bit.
@@ -271,6 +296,7 @@ No modules.
 | <a name="input_dd_api_key"></a> [dd\_api\_key](#input\_dd\_api\_key) | Datadog API Key | `string` | `null` | no |
 | <a name="input_dd_api_key_secret"></a> [dd\_api\_key\_secret](#input\_dd\_api\_key\_secret) | Datadog API Key Secret ARN | <pre>object({<br/>    arn = string<br/>  })</pre> | `null` | no |
 | <a name="input_dd_apm"></a> [dd\_apm](#input\_dd\_apm) | Configuration for Datadog APM | <pre>object({<br/>    enabled                       = optional(bool, true)<br/>    socket_enabled                = optional(bool, true)<br/>    profiling                     = optional(bool, false)<br/>    trace_inferred_proxy_services = optional(bool, false)<br/>    data_streams                  = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "data_streams_enabled": false,<br/>  "enabled": true,<br/>  "profiling": false,<br/>  "socket_enabled": true,<br/>  "trace_inferred_proxy_services": false<br/>}</pre> | no |
+| <a name="input_dd_apm_instrumentation"></a> [dd\_apm\_instrumentation](#input\_dd\_apm\_instrumentation) | Configuration for Datadog automatic APM instrumentation | <pre>object({<br/>    language       = string<br/>    container_name = optional(string)<br/>    tracer_version = optional(string, "latest")<br/>    tracer_libc    = optional(string, "glibc")<br/>  })</pre> | `null` | no |
 | <a name="input_dd_checks_cardinality"></a> [dd\_checks\_cardinality](#input\_dd\_checks\_cardinality) | Datadog Agent checks cardinality | `string` | `null` | no |
 | <a name="input_dd_cluster_name"></a> [dd\_cluster\_name](#input\_dd\_cluster\_name) | Datadog cluster name | `string` | `null` | no |
 | <a name="input_dd_cpu"></a> [dd\_cpu](#input\_dd\_cpu) | Datadog Agent container CPU units | `number` | `null` | no |
@@ -286,7 +312,7 @@ No modules.
 | <a name="input_dd_log_collection"></a> [dd\_log\_collection](#input\_dd\_log\_collection) | Configuration for Datadog Log Collection | <pre>object({<br/>    enabled = optional(bool, false)<br/>    fluentbit_config = optional(object({<br/>      registry                         = optional(string, "public.ecr.aws/aws-observability/aws-for-fluent-bit")<br/>      image_version                    = optional(string, "stable")<br/>      cpu                              = optional(number)<br/>      memory_limit_mib                 = optional(number)<br/>      is_log_router_essential          = optional(bool, false)<br/>      is_log_router_dependency_enabled = optional(bool, false)<br/>      environment = optional(list(object({<br/>        name  = string<br/>        value = string<br/>      })), [])<br/>      log_router_health_check = optional(object({<br/>        command      = optional(list(string))<br/>        interval     = optional(number)<br/>        retries      = optional(number)<br/>        start_period = optional(number)<br/>        timeout      = optional(number)<br/>        }),<br/>        {<br/>          command      = ["CMD-SHELL", "exit 0"]<br/>          interval     = 5<br/>          retries      = 3<br/>          start_period = 15<br/>          timeout      = 5<br/>        }<br/>      )<br/>      firelens_options = optional(object({<br/>        config_file_type  = optional(string)<br/>        config_file_value = optional(string)<br/>      }))<br/>      log_driver_configuration = optional(object({<br/>        host_endpoint = optional(string, "http-intake.logs.datadoghq.com")<br/>        tls           = optional(bool)<br/>        compress      = optional(string)<br/>        service_name  = optional(string)<br/>        source_name   = optional(string)<br/>        message_key   = optional(string)<br/>        }),<br/>        {<br/>          host_endpoint = "http-intake.logs.datadoghq.com"<br/>        }<br/>      )<br/>      mountPoints = optional(list(object({<br/>        sourceVolume : string,<br/>        containerPath : string,<br/>        readOnly : bool<br/>      })), [])<br/>      dependsOn = optional(list(object({<br/>        containerName : string,<br/>        condition : string<br/>      })), [])<br/>      }),<br/>      {<br/>        fluentbit_config = {<br/>          registry      = "public.ecr.aws/aws-observability/aws-for-fluent-bit"<br/>          image_version = "stable"<br/>          log_driver_configuration = {<br/>            host_endpoint = "http-intake.logs.datadoghq.com"<br/>          }<br/>        }<br/>      }<br/>    )<br/>  })</pre> | <pre>{<br/>  "enabled": false,<br/>  "fluentbit_config": {<br/>    "is_log_router_essential": false,<br/>    "log_driver_configuration": {<br/>      "host_endpoint": "http-intake.logs.datadoghq.com"<br/>    }<br/>  }<br/>}</pre> | no |
 | <a name="input_dd_memory_limit_mib"></a> [dd\_memory\_limit\_mib](#input\_dd\_memory\_limit\_mib) | Datadog Agent container memory limit in MiB | `number` | `null` | no |
 | <a name="input_dd_orchestrator_explorer"></a> [dd\_orchestrator\_explorer](#input\_dd\_orchestrator\_explorer) | Configuration for Datadog Orchestrator Explorer | <pre>object({<br/>    enabled = optional(bool, true)<br/>    url     = optional(string)<br/>  })</pre> | <pre>{<br/>  "enabled": true<br/>}</pre> | no |
-| <a name="input_dd_readonly_root_filesystem"></a> [dd\_readonly\_root\_filesystem](#input\_dd\_readonly\_root\_filesystem) | Datadog Agent container runs with read-only root filesystem enabled | `bool` | `false` | no |
+| <a name="input_dd_readonly_root_filesystem"></a> [dd\_readonly\_root\_filesystem](#input\_dd\_readonly\_root\_filesystem) | Whether the Datadog Agent, log router, and APM tracer containers run with a read-only root filesystem | `bool` | `false` | no |
 | <a name="input_dd_registry"></a> [dd\_registry](#input\_dd\_registry) | Datadog Agent image registry | `string` | `"public.ecr.aws/datadog/agent"` | no |
 | <a name="input_dd_service"></a> [dd\_service](#input\_dd\_service) | The task service name. Used for tagging (UST) | `string` | `null` | no |
 | <a name="input_dd_site"></a> [dd\_site](#input\_dd\_site) | Datadog Site | `string` | `"datadoghq.com"` | no |
