@@ -126,8 +126,7 @@ func TestECSFargateE2E(t *testing.T) {
 	})
 
 	runPhase(t, "waiting for traces and logs", func() {
-		// Matches service, env, and run ID. The verifier checks DD_VERSION in the task definition.
-		requireTelemetry(ctx, t, cfg, url, e2eshared.IdentityFor(sharedCfg, name, testEnv, "", runID))
+		requireTelemetry(ctx, t, cfg, url, e2eshared.IdentityFor(sharedCfg, name, testEnv, testVersion, runID))
 	})
 
 	runPhase(t, "checking that the next plan is empty", func() {
