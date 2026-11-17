@@ -196,6 +196,38 @@ locals {
 
   application_containers = jsondecode(var.container_definitions)
 
+  # Ports the Datadog Agent binds in the task's shared network namespace.
+  # DogStatsD has no TCP listener; the Agent binds it on UDP only.
+  dd_agent_ports = [
+    { port = 8126, protocol = "tcp", name = "Datadog Agent trace port" },
+    { port = 8125, protocol = "udp", name = "Datadog Agent DogStatsD UDP port" },
+  ]
+
+  # Application port mappings that overlap an Agent port, honoring `protocol` and `containerPortRange`.
+  app_agent_port_conflicts = flatten([
+    for container in local.application_containers : [
+      for mapping in try(container.portMappings, []) : [
+        for agent_port in local.dd_agent_ports : {
+          message = join(" ", [
+            try(mapping.containerPortRange, null) != null && can(regex("^[0-9]+-[0-9]+$", mapping.containerPortRange))
+            ? "Port range ${mapping.containerPortRange} on container '${try(container.name, "<unnamed>")}' (portMappings.containerPortRange) conflicts with ${agent_port.name} ${agent_port.port}."
+            : "Port ${agent_port.port} on container '${try(container.name, "<unnamed>")}' (portMappings.containerPort) conflicts with ${agent_port.name} ${agent_port.port}.",
+            "Change the ${try(mapping.containerPortRange, null) != null ? "port range" : "port"} on container '${try(container.name, "<unnamed>")}'."
+          ])
+        }
+        if lower(try(mapping.protocol, "tcp")) == agent_port.protocol && (
+          try(mapping.containerPortRange, null) != null
+          ? (
+            can(regex("^[0-9]+-[0-9]+$", mapping.containerPortRange))
+            && tonumber(split("-", mapping.containerPortRange)[0]) <= agent_port.port
+            && agent_port.port <= tonumber(split("-", mapping.containerPortRange)[1])
+          )
+          : try(mapping.containerPort, null) == agent_port.port
+        )
+      ]
+    ]
+  ])
+
   modified_container_definitions = [
     for index, container in local.application_containers : merge(
       container,

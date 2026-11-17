@@ -4,6 +4,21 @@
 # Copyright 2025-present Datadog, Inc.
 
 ################################################################################
+# Port preconditions
+################################################################################
+
+# Containers in an awsvpc task share one network namespace, so an app container can't
+# listen on an Agent port: the Agent binds it and one of the two containers fails to start.
+resource "terraform_data" "port_preconditions" {
+  lifecycle {
+    precondition {
+      condition     = length(local.app_agent_port_conflicts) == 0
+      error_message = join(" ", [for conflict in local.app_agent_port_conflicts : conflict.message])
+    }
+  }
+}
+
+################################################################################
 # Task Definition
 ################################################################################
 
