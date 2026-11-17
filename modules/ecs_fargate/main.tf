@@ -13,7 +13,7 @@ resource "terraform_data" "port_preconditions" {
   lifecycle {
     precondition {
       condition     = length(local.app_agent_port_conflicts) == 0
-      error_message = join(" ", [for conflict in local.app_agent_port_conflicts : conflict.message])
+      error_message = join(" ", [for conflict in local.app_agent_port_conflicts : conflict])
     }
   }
 }

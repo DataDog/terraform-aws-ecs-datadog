@@ -203,28 +203,30 @@ locals {
     { port = 8125, protocol = "udp", name = "Datadog Agent DogStatsD UDP port" },
   ]
 
-  # Application port mappings that overlap an Agent port, honoring `protocol` and `containerPortRange`.
-  app_agent_port_conflicts = flatten([
+  # Application port mappings as inclusive ranges; `containerPort` is a range of one.
+  app_port_ranges = flatten([
     for container in local.application_containers : [
-      for mapping in try(container.portMappings, []) : [
-        for agent_port in local.dd_agent_ports : {
-          message = join(" ", [
-            try(mapping.containerPortRange, null) != null && can(regex("^[0-9]+-[0-9]+$", mapping.containerPortRange))
-            ? "Port range ${mapping.containerPortRange} on container '${try(container.name, "<unnamed>")}' (portMappings.containerPortRange) conflicts with ${agent_port.name} ${agent_port.port}."
-            : "Port ${agent_port.port} on container '${try(container.name, "<unnamed>")}' (portMappings.containerPort) conflicts with ${agent_port.name} ${agent_port.port}.",
-            "Change the ${try(mapping.containerPortRange, null) != null ? "port range" : "port"} on container '${try(container.name, "<unnamed>")}'."
-          ])
-        }
-        if lower(try(mapping.protocol, "tcp")) == agent_port.protocol && (
-          try(mapping.containerPortRange, null) != null
-          ? (
-            can(regex("^[0-9]+-[0-9]+$", mapping.containerPortRange))
-            && tonumber(split("-", mapping.containerPortRange)[0]) <= agent_port.port
-            && agent_port.port <= tonumber(split("-", mapping.containerPortRange)[1])
-          )
-          : try(mapping.containerPort, null) == agent_port.port
-        )
-      ]
+      for mapping in try(container.portMappings, []) : {
+        container = container.name
+        protocol  = lower(try(mapping.protocol, "tcp"))
+        is_range  = try(mapping.containerPortRange, null) != null
+        spec      = try(mapping.containerPortRange, tostring(mapping.containerPort))
+      }
+    ]
+  ])
+  app_port_bounds = [
+    for range in local.app_port_ranges : merge(range, {
+      first = tonumber(split("-", range.spec)[0])
+      last  = tonumber(reverse(split("-", range.spec))[0])
+    })
+  ]
+
+  # Messages for mappings that overlap an Agent port.
+  app_agent_port_conflicts = flatten([
+    for range in local.app_port_bounds : [
+      for agent_port in local.dd_agent_ports :
+      "${range.is_range ? "Port range" : "Port"} ${range.spec} on container '${range.container}' (portMappings.${range.is_range ? "containerPortRange" : "containerPort"}) conflicts with ${agent_port.name} ${agent_port.port}. Change the ${range.is_range ? "port range" : "port"} on container '${range.container}'."
+      if range.protocol == agent_port.protocol && range.first <= agent_port.port && agent_port.port <= range.last
     ]
   ])
 
