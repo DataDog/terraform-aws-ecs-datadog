@@ -89,6 +89,9 @@ func TestApmInstrumentationInvalid(t *testing.T) {
 		"`dd_apm_instrumentation.container_name` is 'missing-app', but no application container has that name. Choose one of: app.",
 		"The task definition has several application containers: app, worker.",
 		"The container to instrument sets PYTHONPATH from `secrets`",
+		"Automatic APM instrumentation found no application container in `container_definitions`.",
+		"The container to instrument sets PYTHONPATH more than once in `environment`.",
+		"The container to instrument sets CORECLR_ENABLE_PROFILING to values that conflict with the tracer.",
 	)
 
 	// Container definitions unknown until apply pass the plan, then fail the apply
@@ -117,12 +120,9 @@ func TestApmInstrumentationSkipped(t *testing.T) {
 	plan := terraform.ShowWithStruct(t, terraformOptions)
 
 	expectedWarnings := map[string]string{
-		"dd_task_apm_no_application_container": "Automatic APM instrumentation found no application container in `container_definitions`.",
-		"dd_task_apm_duplicated_env":           "The container to instrument sets PYTHONPATH more than once in `environment`.",
-		"dd_task_apm_set_if_absent_conflict":   "The container to instrument sets CORECLR_ENABLE_PROFILING to values that conflict with the tracer.",
-		"dd_task_apm_env_over_max_length":      "Adding the tracer settings to the container to instrument makes LD_PRELOAD exceed its 1024-byte limit.",
-		"dd_task_apm_tracer_name_taken":        "The task definition already has a container or volume named 'datadog-tracer'",
-		"dd_task_apm_tracer_mount_taken":       "These mount points conflict with the tracer volume: app:/datadog-lib.",
+		"dd_task_apm_env_over_max_length": "Adding the tracer settings to the container to instrument makes LD_PRELOAD exceed its 1024-byte limit.",
+		"dd_task_apm_tracer_name_taken":   "The task definition already has a container or volume named 'datadog-tracer'",
+		"dd_task_apm_tracer_mount_taken":  "These mount points conflict with the tracer volume: app:/datadog-lib.",
 	}
 	for module, warning := range expectedWarnings {
 		t.Run(module, func(t *testing.T) {

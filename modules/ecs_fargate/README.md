@@ -234,6 +234,8 @@ dd_apm_instrumentation = {
 
 The module adds a `datadog-tracer` container that copies the tracer into a shared volume, and starts your application container after the copy succeeds. The tracer settings are added to the values of variables such as `NODE_OPTIONS`, `PYTHONPATH`, and `JAVA_TOOL_OPTIONS` that you set in the container's `environment`, instead of replacing them. Values of these variables that you set in your image or in an environment file are overridden, so copy them to `environment`.
 
+`terraform plan` fails if the task definition has no application container, if the container to instrument sets one of these variables more than once, or if it sets a variable that the tracer requires to a conflicting value.
+
 The `datadog-tracer` container sends its logs to Datadog when log collection is enabled. Otherwise, it uses the first `awslogs` log configuration of your application containers. If neither is available, `terraform plan` shows a warning.
 
 
@@ -284,6 +286,7 @@ No modules.
 | [aws_iam_role_policy_attachment.existing_role_ecs_task_permissions](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.new_ecs_task_execution_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.new_role_ecs_task_permissions](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [terraform_data.apm_instrumentation_preconditions](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 | [aws_iam_policy_document.dd_ecs_task_permissions](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.dd_secret_access](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 
