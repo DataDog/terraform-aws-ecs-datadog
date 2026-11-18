@@ -206,11 +206,11 @@ locals {
   # Application port mappings as inclusive ranges; `containerPort` is a range of one.
   app_port_ranges = flatten([
     for container in local.application_containers : [
-      for mapping in try(container.portMappings, []) : {
+      for mapping in try(container.portMappings[*], []) : {
         container = container.name
-        protocol  = lower(try(mapping.protocol, "tcp"))
+        protocol  = lower(coalesce(try(mapping.protocol, null), "tcp"))
         is_range  = try(mapping.containerPortRange, null) != null
-        spec      = try(mapping.containerPortRange, tostring(mapping.containerPort))
+        spec      = try(mapping.containerPortRange, null) != null ? mapping.containerPortRange : tostring(mapping.containerPort)
       }
     ]
   ])
