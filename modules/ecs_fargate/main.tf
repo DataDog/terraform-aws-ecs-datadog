@@ -205,6 +205,18 @@ resource "aws_ecs_task_definition" "this" {
       condition     = length(local.app_agent_port_conflicts) == 0
       error_message = join(" ", [for conflict in local.app_agent_port_conflicts : conflict])
     }
+    precondition {
+      condition     = !local.apm_injection_requested || length(local.apm_candidates) > 0
+      error_message = "Automatic APM instrumentation found no application container in `container_definitions`. Add one to instrument."
+    }
+    precondition {
+      condition     = !local.apm_injection_requested || length(local.apm_duplicate_env_names) == 0
+      error_message = "The container to instrument sets ${join(", ", local.apm_duplicate_env_names)} more than once in `environment`. Remove the duplicates."
+    }
+    precondition {
+      condition     = !local.apm_injection_requested || length(local.apm_set_if_absent_conflicts) == 0
+      error_message = "The container to instrument sets ${join(", ", [for fragment in local.apm_set_if_absent_conflicts : fragment.name])} to values that conflict with the tracer. Remove these variables, or set them to the tracer's values: ${join(", ", [for fragment in local.apm_set_if_absent_conflicts : "${fragment.name}=${fragment.value}"])}."
+    }
     # Must provide only one of the two Datadog API key options
     precondition {
       condition     = (var.dd_api_key == null && var.dd_api_key_secret != null) || (var.dd_api_key != null && var.dd_api_key_secret == null)

@@ -272,25 +272,6 @@ locals {
   apm_injection_tags = local.apm_injection_enabled ? { dd_sls_injection_mode = "single_language" } : {}
 }
 
-resource "terraform_data" "apm_instrumentation_preconditions" {
-  count = local.apm_injection_requested ? 1 : 0
-
-  lifecycle {
-    precondition {
-      condition     = length(local.apm_candidates) > 0
-      error_message = "Automatic APM instrumentation found no application container in `container_definitions`. Add one to instrument."
-    }
-    precondition {
-      condition     = length(local.apm_duplicate_env_names) == 0
-      error_message = "The container to instrument sets ${join(", ", local.apm_duplicate_env_names)} more than once in `environment`. Remove the duplicates."
-    }
-    precondition {
-      condition     = length(local.apm_set_if_absent_conflicts) == 0
-      error_message = "The container to instrument sets ${join(", ", [for fragment in local.apm_set_if_absent_conflicts : fragment.name])} to values that conflict with the tracer. Remove these variables, or set them to the tracer's values: ${join(", ", [for fragment in local.apm_set_if_absent_conflicts : "${fragment.name}=${fragment.value}"])}."
-    }
-  }
-}
-
 check "apm_env_within_max_length" {
   assert {
     condition     = !local.apm_injection_requested || length(local.apm_env_exceeding_max_length) == 0

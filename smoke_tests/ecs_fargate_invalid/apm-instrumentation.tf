@@ -182,3 +182,44 @@ module "dd_task_apm_unknown_at_plan" {
     },
   ])
 }
+
+# Checks that the apply fails before it registers the task definition when a tracer variable is
+# set more than once and the container definitions are unknown until apply
+module "dd_task_apm_duplicated_env_unknown_at_plan" {
+  source = "../../modules/ecs_fargate"
+
+  dd_api_key = var.dd_api_key
+
+  dd_apm_instrumentation = {
+    language = "python"
+  }
+
+  family = "${var.test_prefix}-apm-duplicated-env-unknown-at-plan"
+  # Passing a task role keeps the apply from creating IAM resources before it fails.
+  task_role = {
+    arn                    = "arn:aws:iam::123456789012:role/unused"
+    add_dd_ecs_permissions = false
+  }
+  container_definitions = jsonencode([
+    {
+      name      = "app",
+      image     = "public.ecr.aws/docker/library/python:3.12-slim",
+      essential = true,
+      environment = [
+        {
+          name = "DEPLOYED_AT",
+          # timestamp() is unknown until apply.
+          value = timestamp(),
+        },
+        {
+          name  = "PYTHONPATH",
+          value = "/app",
+        },
+        {
+          name  = "PYTHONPATH",
+          value = "/lib",
+        },
+      ],
+    },
+  ])
+}

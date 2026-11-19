@@ -103,6 +103,18 @@ func TestApmInstrumentationInvalid(t *testing.T) {
 	assertOutputContains(t, err.Error(),
 		"`dd_apm_instrumentation.container_name` is 'missing-app', but no application container has that name. Choose one of: app.",
 	)
+
+	// A precondition converted from a check fails the apply the same way, before the task definition exists
+	terraformOptions.Targets = []string{"module.dd_task_apm_duplicated_env_unknown_at_plan"}
+	terraform.Plan(t, terraformOptions)
+	_, err = terraform.ApplyE(t, terraformOptions)
+	require.Error(t, err, "expected terraform apply to fail due to a precondition violation")
+	assertOutputContains(t, err.Error(),
+		"The container to instrument sets PYTHONPATH more than once in `environment`.",
+	)
+	state, err := terraform.RunTerraformCommandE(t, terraformOptions, "state", "list")
+	require.NoError(t, err)
+	assert.NotContains(t, state, "aws_ecs_task_definition", "task definition should not be created")
 }
 
 // verifies that the plan warns and leaves the task
