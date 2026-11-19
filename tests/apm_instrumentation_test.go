@@ -89,6 +89,9 @@ func TestApmInstrumentationInvalid(t *testing.T) {
 		"`dd_apm_instrumentation.container_name` is 'missing-app', but no application container has that name. Choose one of: app.",
 		"The task definition has several application containers: app, worker.",
 		"The container to instrument sets PYTHONPATH from `secrets`",
+		"Automatic APM instrumentation found no application container in `container_definitions`.",
+		"The container to instrument sets PYTHONPATH more than once in `environment`.",
+		"The container to instrument sets CORECLR_ENABLE_PROFILING to values that conflict with the tracer.",
 	)
 
 	// Container definitions unknown until apply pass the plan, then fail the apply
@@ -100,6 +103,18 @@ func TestApmInstrumentationInvalid(t *testing.T) {
 	assertOutputContains(t, err.Error(),
 		"`dd_apm_instrumentation.container_name` is 'missing-app', but no application container has that name. Choose one of: app.",
 	)
+
+	// A precondition converted from a check fails the apply the same way, before the task definition exists
+	terraformOptions.Targets = []string{"module.dd_task_apm_duplicated_env_unknown_at_plan"}
+	terraform.Plan(t, terraformOptions)
+	_, err = terraform.ApplyE(t, terraformOptions)
+	require.Error(t, err, "expected terraform apply to fail due to a precondition violation")
+	assertOutputContains(t, err.Error(),
+		"The container to instrument sets PYTHONPATH more than once in `environment`.",
+	)
+	state, err := terraform.RunTerraformCommandE(t, terraformOptions, "state", "list")
+	require.NoError(t, err)
+	assert.NotContains(t, state, "aws_ecs_task_definition", "task definition should not be created")
 }
 
 // verifies that the plan warns and leaves the task
@@ -117,12 +132,9 @@ func TestApmInstrumentationSkipped(t *testing.T) {
 	plan := terraform.ShowWithStruct(t, terraformOptions)
 
 	expectedWarnings := map[string]string{
-		"dd_task_apm_no_application_container": "Automatic APM instrumentation found no application container in `container_definitions`.",
-		"dd_task_apm_duplicated_env":           "The container to instrument sets PYTHONPATH more than once in `environment`.",
-		"dd_task_apm_set_if_absent_conflict":   "The container to instrument sets CORECLR_ENABLE_PROFILING to values that conflict with the tracer.",
-		"dd_task_apm_env_over_max_length":      "Adding the tracer settings to the container to instrument makes LD_PRELOAD exceed its 1024-byte limit.",
-		"dd_task_apm_tracer_name_taken":        "The task definition already has a container or volume named 'datadog-tracer'",
-		"dd_task_apm_tracer_mount_taken":       "These mount points conflict with the tracer volume: app:/datadog-lib.",
+		"dd_task_apm_env_over_max_length": "Adding the tracer settings to the container to instrument makes LD_PRELOAD exceed its 1024-byte limit.",
+		"dd_task_apm_tracer_name_taken":   "The task definition already has a container or volume named 'datadog-tracer'",
+		"dd_task_apm_tracer_mount_taken":  "These mount points conflict with the tracer volume: app:/datadog-lib.",
 	}
 	for module, warning := range expectedWarnings {
 		t.Run(module, func(t *testing.T) {

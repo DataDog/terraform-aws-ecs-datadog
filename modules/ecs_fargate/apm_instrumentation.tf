@@ -215,8 +215,6 @@ locals {
     local.is_linux &&
     local.apm_target_index != null &&
     length(local.apm_secret_env_names) == 0 &&
-    length(local.apm_duplicate_env_names) == 0 &&
-    length(local.apm_set_if_absent_conflicts) == 0 &&
     length(local.apm_env_exceeding_max_length) == 0 &&
     !local.apm_tracer_name_taken &&
     length(local.apm_conflicting_mounts) == 0
@@ -272,27 +270,6 @@ locals {
   tracer_volume = local.apm_injection_enabled ? [{ name = local.tracer_volume_name }] : []
 
   apm_injection_tags = local.apm_injection_enabled ? { dd_sls_injection_mode = "single_language" } : {}
-}
-
-check "apm_target_container_exists" {
-  assert {
-    condition     = !local.apm_injection_requested || length(local.apm_candidates) > 0
-    error_message = "Automatic APM instrumentation found no application container in `container_definitions`. Add one to instrument. The module doesn't add the tracer."
-  }
-}
-
-check "apm_env_not_duplicated" {
-  assert {
-    condition     = !local.apm_injection_requested || length(local.apm_duplicate_env_names) == 0
-    error_message = "The container to instrument sets ${join(", ", local.apm_duplicate_env_names)} more than once in `environment`. Remove the duplicates. The module doesn't add the tracer."
-  }
-}
-
-check "apm_env_set_if_absent_compatible" {
-  assert {
-    condition     = !local.apm_injection_requested || length(local.apm_set_if_absent_conflicts) == 0
-    error_message = "The container to instrument sets ${join(", ", [for fragment in local.apm_set_if_absent_conflicts : fragment.name])} to values that conflict with the tracer. Remove these variables, or set them to the tracer's values: ${join(", ", [for fragment in local.apm_set_if_absent_conflicts : "${fragment.name}=${fragment.value}"])}. The module doesn't add the tracer."
-  }
 }
 
 check "apm_env_within_max_length" {
