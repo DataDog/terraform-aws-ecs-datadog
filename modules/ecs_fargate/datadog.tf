@@ -196,6 +196,40 @@ locals {
 
   application_containers = jsondecode(var.container_definitions)
 
+  # Ports the Datadog Agent binds in the task's shared network namespace.
+  # DogStatsD has no TCP listener; the Agent binds it on UDP only.
+  dd_agent_ports = [
+    { port = 8126, protocol = "tcp", name = "Datadog Agent trace port" },
+    { port = 8125, protocol = "udp", name = "Datadog Agent DogStatsD UDP port" },
+  ]
+
+  # Application port mappings as inclusive ranges; `containerPort` is a range of one.
+  app_port_ranges = flatten([
+    for container in local.application_containers : [
+      for mapping in try(container.portMappings[*], []) : {
+        container = container.name
+        protocol  = lower(coalesce(try(mapping.protocol, null), "tcp"))
+        is_range  = try(mapping.containerPortRange, null) != null
+        spec      = try(mapping.containerPortRange, null) != null ? mapping.containerPortRange : tostring(mapping.containerPort)
+      }
+    ]
+  ])
+  app_port_bounds = [
+    for range in local.app_port_ranges : merge(range, {
+      first = tonumber(split("-", range.spec)[0])
+      last  = tonumber(reverse(split("-", range.spec))[0])
+    })
+  ]
+
+  # Messages for mappings that overlap an Agent port.
+  app_agent_port_conflicts = flatten([
+    for range in local.app_port_bounds : [
+      for agent_port in local.dd_agent_ports :
+      "${range.is_range ? "Port range" : "Port"} ${range.spec} on container '${range.container}' (portMappings.${range.is_range ? "containerPortRange" : "containerPort"}) conflicts with ${agent_port.name} ${agent_port.port}. Change the ${range.is_range ? "port range" : "port"} on container '${range.container}'."
+      if range.protocol == agent_port.protocol && range.first <= agent_port.port && agent_port.port <= range.last
+    ]
+  ])
+
   modified_container_definitions = [
     for index, container in local.application_containers : merge(
       container,

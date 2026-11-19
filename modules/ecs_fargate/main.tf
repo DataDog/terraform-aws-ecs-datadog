@@ -199,6 +199,12 @@ resource "aws_ecs_task_definition" "this" {
       condition     = !local.apm_injection_requested || length(local.apm_secret_env_names) == 0
       error_message = "The container to instrument sets ${join(", ", local.apm_secret_env_names)} from `secrets`, so the module can't add the tracer settings. Set these variables in `environment` instead, or remove them."
     }
+    # Containers in an awsvpc task share one network namespace, so an app container can't
+    # listen on an Agent port: the Agent binds it and one of the two containers fails to start.
+    precondition {
+      condition     = length(local.app_agent_port_conflicts) == 0
+      error_message = join(" ", [for conflict in local.app_agent_port_conflicts : conflict])
+    }
     # Must provide only one of the two Datadog API key options
     precondition {
       condition     = (var.dd_api_key == null && var.dd_api_key_secret != null) || (var.dd_api_key != null && var.dd_api_key_secret == null)
