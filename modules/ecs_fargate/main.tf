@@ -4,21 +4,6 @@
 # Copyright 2025-present Datadog, Inc.
 
 ################################################################################
-# Port preconditions
-################################################################################
-
-# Containers in an awsvpc task share one network namespace, so an app container can't
-# listen on an Agent port: the Agent binds it and one of the two containers fails to start.
-resource "terraform_data" "port_preconditions" {
-  lifecycle {
-    precondition {
-      condition     = length(local.app_agent_port_conflicts) == 0
-      error_message = join(" ", [for conflict in local.app_agent_port_conflicts : conflict])
-    }
-  }
-}
-
-################################################################################
 # Task Definition
 ################################################################################
 
@@ -213,6 +198,12 @@ resource "aws_ecs_task_definition" "this" {
     precondition {
       condition     = !local.apm_injection_requested || length(local.apm_secret_env_names) == 0
       error_message = "The container to instrument sets ${join(", ", local.apm_secret_env_names)} from `secrets`, so the module can't add the tracer settings. Set these variables in `environment` instead, or remove them."
+    }
+    # Containers in an awsvpc task share one network namespace, so an app container can't
+    # listen on an Agent port: the Agent binds it and one of the two containers fails to start.
+    precondition {
+      condition     = length(local.app_agent_port_conflicts) == 0
+      error_message = join(" ", [for conflict in local.app_agent_port_conflicts : conflict])
     }
     # Must provide only one of the two Datadog API key options
     precondition {
