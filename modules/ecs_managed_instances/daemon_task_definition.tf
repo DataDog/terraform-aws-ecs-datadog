@@ -99,7 +99,8 @@ resource "aws_ecs_daemon_task_definition" "datadog_agent" {
   }
 
   # Volumes - includes Datadog host volumes (CRI socket, proc, cgroup, UDS
-  # sockets, network monitoring debug mount) and user-provided volumes
+  # sockets, network monitoring debug mount), the json-file log driver volume
+  # when log collection is enabled, and user-provided volumes
   dynamic "volume" {
     for_each = local.all_volumes
 
@@ -111,6 +112,14 @@ resource "aws_ecs_daemon_task_definition" "datadog_agent" {
 
         content {
           source_path = host.value
+        }
+      }
+
+      dynamic "log_driver_volume_configuration" {
+        for_each = try(volume.value.log_driver, null) != null ? [volume.value.log_driver] : []
+
+        content {
+          driver = log_driver_volume_configuration.value
         }
       }
     }
@@ -144,13 +153,6 @@ resource "aws_ecs_daemon_task_definition" "datadog_agent" {
     precondition {
       condition     = (var.dd_api_key == null && var.dd_api_key_secret != null) || (var.dd_api_key != null && var.dd_api_key_secret == null)
       error_message = "You must provide exactly one of the two Datadog API key options: 'dd_api_key' or 'dd_api_key_secret'."
-    }
-
-    # Container log collection through the agent is not supported in daemon
-    # mode on ECS Managed Instances.
-    precondition {
-      condition     = var.dd_log_collection.enabled == false
-      error_message = "Container log collection through the Datadog Agent is not supported in daemon mode on ECS Managed Instances. Use the FireLens log driver or the 'awslogs' driver configured directly on your application task definition instead."
     }
 
     # DogStatsD must have at least one transport configured when enabled

@@ -129,6 +129,57 @@ locals {
 }
 
 ################################################################################
+# Log Collection (json-file log driver)
+################################################################################
+# On ECS Managed Instances the daemon can't read container logs from the host.
+# Instead, ECS exposes the log files that the json-file log driver writes for
+# the instance's other tasks through a log driver volume, which the agent
+# mounts read-only. Only containers that use the json-file log driver are
+# collected.
+
+locals {
+  json_file_logs_volume = var.dd_log_collection.enabled ? [
+    {
+      name       = "json_file_logs"
+      log_driver = "json-file"
+    }
+  ] : []
+
+  json_file_logs_mount = var.dd_log_collection.enabled ? [
+    {
+      source_volume  = "json_file_logs"
+      container_path = "/var/log/ecs/json-file"
+      read_only      = true
+    }
+  ] : []
+
+  logs_vars = var.dd_log_collection.enabled ? concat(
+    [
+      {
+        name  = "DD_LOGS_ENABLED"
+        value = "true"
+      },
+      {
+        name  = "DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL"
+        value = tostring(var.dd_log_collection.container_collect_all)
+      }
+    ],
+    length(var.dd_log_collection.container_include) > 0 ? [
+      {
+        name  = "DD_CONTAINER_INCLUDE_LOGS"
+        value = join(" ", var.dd_log_collection.container_include)
+      }
+    ] : [],
+    length(var.dd_log_collection.container_exclude) > 0 ? [
+      {
+        name  = "DD_CONTAINER_EXCLUDE_LOGS"
+        value = join(" ", var.dd_log_collection.container_exclude)
+      }
+    ] : []
+  ) : []
+}
+
+################################################################################
 # Volume Aggregation
 ################################################################################
 
@@ -148,6 +199,7 @@ locals {
     local.cri_volumes,
     local.apm_dsd_volume,
     local.network_monitoring_volume,
+    local.json_file_logs_volume,
     local.user_volumes,
   )
 
@@ -155,6 +207,7 @@ locals {
     local.cri_mounts,
     local.apm_dsd_mount,
     local.network_monitoring_mount,
+    local.json_file_logs_mount,
     local.user_mounts,
   )
 }
@@ -278,6 +331,7 @@ locals {
       local.process_vars,
       local.network_monitoring_env,
       local.tcp_traffic_vars,
+      local.logs_vars,
     ) : e.name => e.value },
     { for e in local.dd_environment : e.name => e.value if try(e.name, null) != null },
   )

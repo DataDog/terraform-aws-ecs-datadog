@@ -159,9 +159,12 @@ variable "dd_apm" {
 }
 
 variable "dd_log_collection" {
-  description = "Configuration for Datadog Log Collection. Datadog does NOT support container log collection through the agent in daemon mode on ECS Managed Instances. This variable exists only so the module can fail fast with a clear error if a user tries to enable it (enforced via a precondition on the daemon task definition). Use FireLens or the awslogs log driver configured on the application's own task definition instead."
+  description = "Configuration for Datadog Log Collection via the agent. When enabled, the daemon mounts an ECS log driver volume (driver json-file) read-only at /var/log/ecs/json-file and collects the logs of containers on the instance that use the json-file log driver. Application containers must set logConfiguration.logDriver = \"json-file\" on their own task definition. Requires a Datadog Agent version with ECS Managed Instances json-file log support."
   type = object({
-    enabled = optional(bool, false)
+    enabled               = optional(bool, false)
+    container_collect_all = optional(bool, true)
+    container_include     = optional(list(string), [])
+    container_exclude     = optional(list(string), [])
   })
   default = {
     enabled = false
@@ -313,7 +316,7 @@ variable "tags" {
 }
 
 variable "volumes" {
-  description = "Additional host-path volumes mounted in the Agent container, beyond the ones the module manages. `container_path` defaults to `host_path`. `read_only` defaults to true. Volume names may use letters, numbers, underscores, and hyphens, must be unique, and must not be one of the module-managed volume names: containerd_sock, proc, cgroup, dd-sockets, debug. Host paths and container paths must be absolute. Container paths must be unique and must not be one of the module-managed paths: /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug. The volume block on aws_ecs_daemon_task_definition only supports `name` + `host.source_path` - no docker_volume_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler."
+  description = "Additional host-path volumes mounted in the Agent container, beyond the ones the module manages. `container_path` defaults to `host_path`. `read_only` defaults to true. Volume names may use letters, numbers, underscores, and hyphens, must be unique, and must not be one of the module-managed volume names: containerd_sock, proc, cgroup, dd-sockets, debug, json_file_logs. Host paths and container paths must be absolute. Container paths must be unique and must not be one of the module-managed paths: /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug, /var/log/ecs/json-file. User volumes are host-path volumes only (`name` + `host.source_path`) - no docker_volume_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler."
   type = list(object({
     name           = string
     host_path      = string
@@ -328,8 +331,8 @@ variable "volumes" {
   }
 
   validation {
-    condition     = length(setintersection([for v in var.volumes : v.name], ["containerd_sock", "proc", "cgroup", "dd-sockets", "debug"])) == 0
-    error_message = "A volume name clashes with a module-managed volume. The names containerd_sock, proc, cgroup, dd-sockets, and debug are reserved."
+    condition     = length(setintersection([for v in var.volumes : v.name], ["containerd_sock", "proc", "cgroup", "dd-sockets", "debug", "json_file_logs"])) == 0
+    error_message = "A volume name clashes with a module-managed volume. The names containerd_sock, proc, cgroup, dd-sockets, debug, and json_file_logs are reserved."
   }
 
   validation {
@@ -348,8 +351,8 @@ variable "volumes" {
   }
 
   validation {
-    condition     = length(setintersection([for v in var.volumes : coalesce(v.container_path, v.host_path)], ["/var/run/containerd/containerd.sock", "/host/proc", "/host/sys/fs/cgroup", "/var/run/datadog", "/sys/kernel/debug"])) == 0
-    error_message = "A volume container_path clashes with a module-managed mount path. The paths /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, and /sys/kernel/debug are reserved."
+    condition     = length(setintersection([for v in var.volumes : coalesce(v.container_path, v.host_path)], ["/var/run/containerd/containerd.sock", "/host/proc", "/host/sys/fs/cgroup", "/var/run/datadog", "/sys/kernel/debug", "/var/log/ecs/json-file"])) == 0
+    error_message = "A volume container_path clashes with a module-managed mount path. The paths /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug, and /var/log/ecs/json-file are reserved."
   }
 
   validation {

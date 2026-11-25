@@ -146,24 +146,33 @@ resource "aws_ecs_task_definition" "app" {
 
 ## Log Collection
 
-**Container log collection through the Datadog Agent is not supported in daemon mode on ECS Managed Instances.** This module enforces that with a `precondition` that fails the plan if `dd_log_collection.enabled = true`.
+Set `dd_log_collection.enabled = true` to collect the logs of application containers through the Datadog Agent:
 
-Instead, configure log delivery directly on your **application's own task definition** - the daemon cannot see or collect logs from your application containers in this mode. For example, using the `awslogs` driver:
+```hcl
+dd_log_collection = {
+  enabled = true
+}
+```
+
+The module then:
+
+- Adds a `json_file_logs` volume with `log_driver_volume_configuration { driver = "json-file" }` to the daemon task definition.
+- Mounts the volume read-only in the Agent container at `/var/log/ecs/json-file`.
+- Sets `DD_LOGS_ENABLED=true` and `DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL` on the Agent container.
+
+The Agent collects logs only from containers that use the `json-file` log driver. Set the log driver on your **application's own task definition**:
 
 ```json
 {
   "logConfiguration": {
-    "logDriver": "awslogs",
-    "options": {
-      "awslogs-group": "/ecs/my-app",
-      "awslogs-region": "us-east-1",
-      "awslogs-stream-prefix": "my-app"
-    }
+    "logDriver": "json-file"
   }
 }
 ```
 
-Or configure the FireLens log driver on your application task if you need to forward logs to Datadog Log Management directly.
+Use `container_include` and `container_exclude` to filter which containers the Agent collects logs from. Set `container_collect_all = false` to collect only from containers with Autodiscovery log labels.
+
+This feature needs a Datadog Agent version with ECS Managed Instances `json-file` log support.
 
 ### Debugging the daemon itself
 
@@ -240,7 +249,7 @@ This block is write-only on the AWS side - the API does not return these values,
 | DogStatsD / APM over TCP | Supported - requires a real client library for tagging |
 | Process Collection | Supported |
 | Cloud Network Monitoring | Supported, Linux only |
-| Log Collection (agent-collected app logs) | **Not supported** - blocked via precondition; use FireLens/`awslogs` on the app task instead |
+| Log Collection (agent-collected app logs) | Supported for containers that use the `json-file` log driver |
 | Agent's own log routing | Supported via `dd_agent_log_configuration` |
 | Windows | **Not supported** - `aws_ecs_daemon_task_definition` has no `runtime_platform` field at all; this isn't a "planned" gap, there's genuinely nothing to configure |
 | Cloud Workload Security (CWS) | **Deferred** - not implemented pending Datadog documentation for daemon mode. AWS's platform does support privileged mode, Linux capabilities, and host mounts on daemons, so this is technically plausible in the future |
@@ -313,7 +322,7 @@ No modules.
 | <a name="input_dd_essential"></a> [dd\_essential](#input\_dd\_essential) | Whether the Datadog Agent container is essential | `bool` | `true` | no |
 | <a name="input_dd_health_check"></a> [dd\_health\_check](#input\_dd\_health\_check) | Datadog Agent health check configuration. Defaults to Datadog's documented health check command for ECS Managed Instances daemon mode (not the same default used by the ecs\_ec2/ecs\_fargate modules). aws\_ecs\_daemon defaults `critical = true` and the Terraform aws\_ecs\_daemon resource does not expose a way to set `critical = false`, so an unhealthy/flapping health check causes AWS to drain and replace the underlying EC2 instance. Using Datadog's own documented command minimizes that risk. | <pre>object({<br/>    command      = optional(list(string))<br/>    interval     = optional(number)<br/>    retries      = optional(number)<br/>    start_period = optional(number)<br/>    timeout      = optional(number)<br/>  })</pre> | <pre>{<br/>  "command": [<br/>    "CMD-SHELL",<br/>    "agent health"<br/>  ],<br/>  "interval": 30,<br/>  "retries": 3,<br/>  "start_period": 15,<br/>  "timeout": 5<br/>}</pre> | no |
 | <a name="input_dd_image_version"></a> [dd\_image\_version](#input\_dd\_image\_version) | Datadog Agent image version. ECS Managed Instances daemon mode requires Datadog Agent >= 7.77.0. | `string` | `"latest"` | no |
-| <a name="input_dd_log_collection"></a> [dd\_log\_collection](#input\_dd\_log\_collection) | Configuration for Datadog Log Collection. Datadog does NOT support container log collection through the agent in daemon mode on ECS Managed Instances. This variable exists only so the module can fail fast with a clear error if a user tries to enable it (enforced via a precondition on the daemon task definition). Use FireLens or the awslogs log driver configured on the application's own task definition instead. | <pre>object({<br/>    enabled = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "enabled": false<br/>}</pre> | no |
+| <a name="input_dd_log_collection"></a> [dd\_log\_collection](#input\_dd\_log\_collection) | Configuration for Datadog Log Collection via the agent. When enabled, the daemon mounts an ECS log driver volume (driver json-file) read-only at /var/log/ecs/json-file and collects the logs of containers on the instance that use the json-file log driver. Application containers must set logConfiguration.logDriver = "json-file" on their own task definition. Requires a Datadog Agent version with ECS Managed Instances json-file log support. | <pre>object({<br/>    enabled               = optional(bool, false)<br/>    container_collect_all = optional(bool, true)<br/>    container_include     = optional(list(string), [])<br/>    container_exclude     = optional(list(string), [])<br/>  })</pre> | <pre>{<br/>  "enabled": false<br/>}</pre> | no |
 | <a name="input_dd_log_level"></a> [dd\_log\_level](#input\_dd\_log\_level) | Set logging verbosity for Datadog agent. Valid values: trace, debug, info, warn, error, critical, off | `string` | `"info"` | no |
 | <a name="input_dd_memory_limit_mib"></a> [dd\_memory\_limit\_mib](#input\_dd\_memory\_limit\_mib) | Datadog Agent container memory limit in MiB | `number` | `512` | no |
 | <a name="input_dd_network_monitoring"></a> [dd\_network\_monitoring](#input\_dd\_network\_monitoring) | Configuration for Datadog Cloud Network Monitoring. Linux only. When enabled, adds DD\_SYSTEM\_PROBE\_NETWORK\_ENABLED, the linux capabilities required by the system-probe, and a host-mounted /sys/kernel/debug volume. | <pre>object({<br/>    enabled = optional(bool, false)<br/>  })</pre> | <pre>{<br/>  "enabled": false<br/>}</pre> | no |
@@ -332,7 +341,7 @@ No modules.
 | <a name="input_propagate_tags"></a> [propagate\_tags](#input\_propagate\_tags) | Propagate tags to daemon tasks. Valid values: DAEMON, NONE. Note this differs from the ecs\_ec2 module's TASK\_DEFINITION/SERVICE/NONE options, since aws\_ecs\_daemon only supports DAEMON and NONE. | `string` | `"DAEMON"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of additional tags to add to the daemon task definition/daemon created | `map(string)` | `null` | no |
 | <a name="input_task_role"></a> [task\_role](#input\_task\_role) | The ARN of the IAM role that allows your Amazon ECS container task to make calls to other AWS services. Contains:<br/>  - `arn` (string): The ARN of the IAM role.<br/>  - `add_dd_ecs_permissions` (bool): Whether to automatically add Datadog ECS permissions to the role to fetch a provided Datadog API key secret. | <pre>object({<br/>    arn                    = string<br/>    add_dd_ecs_permissions = optional(bool, true)<br/>  })</pre> | `null` | no |
-| <a name="input_volumes"></a> [volumes](#input\_volumes) | Additional host-path volumes mounted in the Agent container, beyond the ones the module manages. `container_path` defaults to `host_path`. `read_only` defaults to true. Volume names may use letters, numbers, underscores, and hyphens, must be unique, and must not be one of the module-managed volume names: containerd\_sock, proc, cgroup, dd-sockets, debug. Host paths and container paths must be absolute. Container paths must be unique and must not be one of the module-managed paths: /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug. The volume block on aws\_ecs\_daemon\_task\_definition only supports `name` + `host.source_path` - no docker\_volume\_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler. | <pre>list(object({<br/>    name           = string<br/>    host_path      = string<br/>    container_path = optional(string)<br/>    read_only      = optional(bool, true)<br/>  }))</pre> | `[]` | no |
+| <a name="input_volumes"></a> [volumes](#input\_volumes) | Additional host-path volumes mounted in the Agent container, beyond the ones the module manages. `container_path` defaults to `host_path`. `read_only` defaults to true. Volume names may use letters, numbers, underscores, and hyphens, must be unique, and must not be one of the module-managed volume names: containerd\_sock, proc, cgroup, dd-sockets, debug, json\_file\_logs. Host paths and container paths must be absolute. Container paths must be unique and must not be one of the module-managed paths: /var/run/containerd/containerd.sock, /host/proc, /host/sys/fs/cgroup, /var/run/datadog, /sys/kernel/debug, /var/log/ecs/json-file. User volumes are host-path volumes only (`name` + `host.source_path`) - no docker\_volume\_configuration/efs/fsx volume types like the other two submodules, so this type is intentionally simpler. | <pre>list(object({<br/>    name           = string<br/>    host_path      = string<br/>    container_path = optional(string)<br/>    read_only      = optional(bool, true)<br/>  }))</pre> | `[]` | no |
 
 ## Outputs
 
