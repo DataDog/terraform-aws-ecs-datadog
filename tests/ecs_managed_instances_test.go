@@ -119,12 +119,16 @@ func (s *ECSManagedInstancesSuite) TestDefaultConfiguration() {
 	s.Equal(15, container.HealthCheck.StartPeriod)
 	s.Equal(5, container.HealthCheck.Timeout)
 
-	// Network monitoring and process collection are off by default.
+	// Network monitoring, process collection and log collection are off by default.
 	s.Nil(container.LinuxParameters, "LinuxParameters should be nil when network monitoring is disabled")
 	AssertMINotEnvVars(s.T(), container, []string{
 		"DD_SYSTEM_PROBE_NETWORK_ENABLED",
 		"DD_PROCESS_CONFIG_PROCESS_COLLECTION_ENABLED",
+		"DD_LOGS_ENABLED",
 	})
+	for _, mp := range container.MountPoint {
+		s.NotEqual("json_file_logs", mp.SourceVolume, "json_file_logs should not be mounted when log collection is disabled")
+	}
 }
 
 // TestCreateDaemonDisabled verifies create_daemon = false skips creating the
@@ -202,8 +206,8 @@ func (s *ECSManagedInstancesSuite) TestProcessCollection() {
 
 // TestInvalidConfigurations verifies the module fails fast (at plan time,
 // before touching AWS) on configurations that ECS Managed Instances daemon
-// mode cannot support: agent-based log collection, and DogStatsD enabled
-// with neither UDS nor TCP transport configured. This uses a separate root
+// mode cannot support: DogStatsD enabled with neither UDS nor TCP transport
+// configured. This uses a separate root
 // module (smoke_tests/ecs_managed_instances_invalid) so a failing
 // precondition here cannot break the main suite's apply/destroy lifecycle.
 // It is intentionally not part of ECSManagedInstancesSuite: plan alone
@@ -240,7 +244,6 @@ func TestInvalidConfigurations(t *testing.T) {
 		}
 	}
 
-	assertContains("Container log collection through the Datadog Agent is not supported in daemon mode")
 	assertContains("neither UDS (socket_enabled) nor TCP (tcp_enabled) transport is configured")
 }
 
@@ -334,4 +337,20 @@ func (s *ECSManagedInstancesSuite) TestUserVolumes() {
 	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "ro-data", ContainerPath: "/host/data/ro", ReadOnly: true})
 	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "rw-data", ContainerPath: "/host/data/rw", ReadOnly: false})
 	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "same-path", ContainerPath: "/data/same", ReadOnly: true})
+}
+
+// TestLogCollection verifies log collection sets the logs env vars and mounts
+// the json-file log driver volume read-only.
+func (s *ECSManagedInstancesSuite) TestLogCollection() {
+	log.Println("TestLogCollection: Running test...")
+
+	container := s.unmarshalMIContainer("log_collection_container_definition")
+
+	AssertMIEnvVars(s.T(), container, map[string]string{
+		"DD_LOGS_ENABLED":                      "true",
+		"DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL": "true",
+		"DD_CONTAINER_INCLUDE_LOGS":            "name:app-.*",
+		"DD_CONTAINER_EXCLUDE_LOGS":            "name:sidecar-.* image:busybox",
+	})
+	AssertMIMountPoint(s.T(), container, MIMountPoint{SourceVolume: "json_file_logs", ContainerPath: "/var/log/ecs/json-file", ReadOnly: true})
 }
